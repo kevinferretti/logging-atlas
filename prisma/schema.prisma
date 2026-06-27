@@ -1,0 +1,45 @@
+// Prisma schema for Atlas — A Passport of Things Logged.
+//
+// Local dev uses SQLite for zero-setup. To move to production Postgres:
+//   1. set `provider = "postgresql"` below
+//   2. set DATABASE_URL to your Postgres connection string
+//   3. run `npx prisma migrate dev`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  entries Entry[]
+}
+
+// A logged experience tied to a country. Country identity lives in the shared
+// catalog (src/lib/countries.ts) keyed by the world-atlas numeric id, so we
+// only store the id here and resolve name/region/coordinates at render time.
+model Entry {
+  id        String   @id @default(cuid())
+  userId    String
+  countryId String // world-atlas numeric country id, e.g. "392" for Japan
+  category  String // recipe | book | movie | music | place
+  title     String
+  by        String   @default("")
+  note      String   @default("")
+  year      Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, countryId])
+}

@@ -1,0 +1,81 @@
+:root {
+  --paper: #efe6d2;
+  --paper2: #f4eddb;
+  --panel: #e7dcc0;
+  --ink: #2e2a22;
+  --ink-soft: #7a6e54;
+  --line: #cbbf9e;
+  --sepia: #8a5a3b;
+  --teal: #5e7a6f;
+  --gold: #a9762f;
+  --red: #9b4a39;
+  --shadow: rgba(60, 46, 24, 0.34);
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "EB Garamond", Georgia, serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button {
+  font: inherit;
+}
+
+input,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(138, 90, 59, 0.25);
+}
+
+@keyframes om-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes om-press {
+  0% {
+    transform: scale(1.5);
+  }
+  55% {
+    transform: scale(0.92);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes om-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(138, 90, 59, 0.3);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
