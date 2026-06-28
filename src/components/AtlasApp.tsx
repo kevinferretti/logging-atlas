@@ -48,6 +48,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
     fd.append("countryId", input.countryId);
     fd.append("category", input.category);
     fd.append("title", input.title);
+    fd.append("link", input.link);
     if (file) fd.append("file", file);
     const res = await fetch("/api/entries", { method: "POST", body: fd });
     if (!res.ok) {

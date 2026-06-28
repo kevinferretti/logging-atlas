@@ -38,3 +38,23 @@ export function isValidKey(key: string): boolean {
 export function uploadPath(key: string): string {
   return path.join(uploadDir(), key);
 }
+
+/**
+ * Normalize a user-supplied link to a safe http(s) URL, or "" if blank/invalid.
+ * Bare domains get an https:// prefix; non-web schemes (javascript:, etc.) are
+ * rejected.
+ */
+export function normalizeLink(raw: string): string {
+  const s = raw.trim();
+  if (!s) return "";
+  // Has a scheme but it isn't http(s) → reject.
+  if (/^[a-z][a-z0-9+.-]*:/i.test(s) && !/^https?:\/\//i.test(s)) return "";
+  const withScheme = /^https?:\/\//i.test(s) ? s : "https://" + s;
+  try {
+    const u = new URL(withScheme);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return "";
+    return u.toString().slice(0, 500);
+  } catch {
+    return "";
+  }
+}

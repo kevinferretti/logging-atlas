@@ -7,6 +7,7 @@ export interface Entry {
   title: string;
   by: string;
   note: string;
+  link: string;
   year: number;
   fileName: string | null;
   fileKey: string | null;

@@ -16,6 +16,7 @@ export default function LogModal({ onClose, onSave }: LogModalProps) {
   const [countryId, setCountryId] = useState(COUNTRY_CATALOG_SORTED[0]?.id ?? "");
   const [category, setCategory] = useState<CategoryKey>("recipe");
   const [title, setTitle] = useState("");
+  const [link, setLink] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +27,7 @@ export default function LogModal({ onClose, onSave }: LogModalProps) {
     setSaving(true);
     setError(null);
     try {
-      await onSave({ countryId, category, title: t }, category === "recipe" ? file : null);
+      await onSave({ countryId, category, title: t, link: link.trim() }, category === "recipe" ? file : null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save entry.");
       setSaving(false);
@@ -76,6 +77,7 @@ export default function LogModal({ onClose, onSave }: LogModalProps) {
         </div>
 
         <input value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save()} placeholder="What did you log?" style={inputStyle} autoFocus />
+        <input value={link} onChange={(e) => setLink(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save()} placeholder="Link (optional)" style={inputStyle} />
         {category === "recipe" && (
           <label style={labelStyle}>
             Recipe file (optional)

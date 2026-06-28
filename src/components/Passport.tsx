@@ -14,6 +14,7 @@ export interface NewEntryInput {
   countryId: string;
   category: CategoryKey;
   title: string;
+  link: string;
 }
 
 interface PassportProps {
@@ -26,11 +27,20 @@ interface PassportProps {
 
 const mono: CSSProperties = { fontFamily: "'Special Elite',monospace" };
 
+function linkHost(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "Open link";
+  }
+}
+
 export default function Passport({ country, palette, onBack, onAdd, onDelete }: PassportProps) {
   const [activeCat, setActiveCat] = useState<"all" | CategoryKey>("all");
   const [adding, setAdding] = useState(false);
   const [formCat, setFormCat] = useState<CategoryKey>("recipe");
   const [title, setTitle] = useState("");
+  const [link, setLink] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -46,8 +56,9 @@ export default function Passport({ country, palette, onBack, onAdd, onDelete }: 
     if (!t || saving) return;
     setSaving(true);
     try {
-      await onAdd({ countryId: country.id, category: formCat, title: t }, formCat === "recipe" ? file : null);
+      await onAdd({ countryId: country.id, category: formCat, title: t, link: link.trim() }, formCat === "recipe" ? file : null);
       setTitle("");
+      setLink("");
       setFile(null);
       setAdding(false);
     } finally {
@@ -249,6 +260,13 @@ export default function Passport({ country, palette, onBack, onAdd, onDelete }: 
               style={inputStyle}
               autoFocus
             />
+            <input
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && save()}
+              placeholder="Link (optional)"
+              style={inputStyle}
+            />
             {formCat === "recipe" && (
               <label style={{ ...mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: "var(--ink-soft)", display: "flex", flexDirection: "column", gap: 6 }}>
                 Recipe file (optional)
@@ -416,6 +434,16 @@ function EntryCard({ entry: e, index: i, onDelete }: { entry: Entry; index: numb
               📎 {e.fileName ?? "Attachment"}
             </span>
           )}
+        </a>
+      )}
+      {e.link && (
+        <a
+          href={e.link}
+          target="_blank"
+          rel="noreferrer noopener"
+          style={{ fontFamily: "'Special Elite',monospace", fontSize: 11, letterSpacing: 0.5, color: "var(--sepia)", textDecoration: "none", wordBreak: "break-all" }}
+        >
+          ↗ {linkHost(e.link)}
         </a>
       )}
       <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 8, paddingTop: 9, borderTop: "1px dashed var(--line)" }}>

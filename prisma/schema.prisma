@@ -36,6 +36,7 @@ model Entry {
   title     String
   by        String   @default("")
   note      String   @default("")
+  link      String   @default("") // optional URL associated with the entry
   year      Int
   // Optional attachment (currently used for recipe uploads). The file is stored
   // on the persistent volume under UPLOAD_DIR; fileKey is its on-disk name.

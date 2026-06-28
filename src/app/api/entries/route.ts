@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import { isCategoryKey } from "@/lib/categories";
 import { catalogCountry } from "@/lib/countries";
-import { MAX_UPLOAD_BYTES, saveUpload } from "@/lib/uploads";
+import { MAX_UPLOAD_BYTES, normalizeLink, saveUpload } from "@/lib/uploads";
 import type { CategoryKey, Entry } from "@/lib/types";
 
 const SELECT = {
@@ -13,6 +13,7 @@ const SELECT = {
   title: true,
   by: true,
   note: true,
+  link: true,
   year: true,
   fileName: true,
   fileKey: true,
@@ -26,6 +27,7 @@ type Row = {
   title: string;
   by: string;
   note: string;
+  link: string;
   year: number;
   fileName: string | null;
   fileKey: string | null;
@@ -65,6 +67,7 @@ export async function POST(req: Request) {
   const countryId = String(form.get("countryId") ?? "");
   const category = String(form.get("category") ?? "");
   const title = String(form.get("title") ?? "").trim();
+  const link = normalizeLink(String(form.get("link") ?? ""));
 
   if (!catalogCountry(countryId)) {
     return NextResponse.json({ error: "Unknown country." }, { status: 400 });
@@ -98,6 +101,7 @@ export async function POST(req: Request) {
       countryId,
       category,
       title: title.slice(0, 200),
+      link,
       year,
       ...fileFields,
     },
