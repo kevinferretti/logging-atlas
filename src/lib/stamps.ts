@@ -27,6 +27,25 @@ export function countCats(c: LoggedCountry): Record<string, number> {
   return m;
 }
 
+/**
+ * Clean globe/map marker: just the entry count on a faint disc, no postmark
+ * ring/ticks/pips. Keeps the map legible where countries cluster.
+ */
+export function buildGlobeMarker(c: LoggedCountry, o: { size?: number; palette: Palette }): string {
+  const size = o.size ?? 48;
+  const p = o.palette;
+  const total = c.entries.length;
+  const digits = String(total).length;
+  const fs = digits >= 3 ? 30 : digits === 2 ? 36 : 40;
+  return (
+    '<svg viewBox="0 0 100 100" width="' + size + '" height="' + size +
+    '" style="overflow:visible;display:block;">' +
+    '<circle cx="50" cy="50" r="33" fill="' + p.paper2 + '" fill-opacity="0.86" stroke="' + p.sepia + '" stroke-opacity="0.6" stroke-width="2"/>' +
+    '<text x="50" y="50" text-anchor="middle" dominant-baseline="central" font-family="Marcellus,serif" font-size="' + fs + '" fill="' + p.ink + '">' + total + "</text>" +
+    "</svg>"
+  );
+}
+
 export function buildStampSVG(c: LoggedCountry, o: StampOptions): string {
   const size = o.size ?? 120;
   const detail = o.detail ?? "full";

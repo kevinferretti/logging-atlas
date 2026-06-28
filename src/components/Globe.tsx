@@ -11,7 +11,7 @@ import {
 } from "d3-geo";
 import { feature } from "topojson-client";
 import topoData from "world-atlas/countries-110m.json";
-import { buildStampSVG, type StampStyle } from "@/lib/stamps";
+import { buildGlobeMarker, type StampStyle } from "@/lib/stamps";
 import type { Palette } from "@/lib/palettes";
 import type { LoggedCountry } from "@/lib/types";
 
@@ -320,7 +320,7 @@ class GlobeEngine {
       const el = document.createElement("div");
       el.style.cssText =
         "position:absolute;left:0;top:0;will-change:transform,opacity;filter:drop-shadow(0 2px 3px rgba(40,28,12,.4));";
-      el.innerHTML = buildStampSVG(c, { size: sz, detail: "mini", style: this.stampStyle, palette: this.palette });
+      el.innerHTML = buildGlobeMarker(c, { size: sz, palette: this.palette });
       layer.appendChild(el);
       this.markerEls[c.id] = el;
     }
