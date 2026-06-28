@@ -1,0 +1,32 @@
+name: logging-atlas
+
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: logging-atlas:latest
+    restart: unless-stopped
+    env_file:
+      - ${ATLAS_ENV_FILE:-/opt/logging-atlas/shared/.env}
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+    volumes:
+      # Persists the SQLite database across redeploys.
+      - ${ATLAS_SHARED_DIR:-/opt/logging-atlas/shared}:/opt/logging-atlas/shared
+    expose:
+      - "3000"
+    networks:
+      edge-proxy:
+        aliases:
+          - atlas
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+networks:
+  edge-proxy:
+    external: true

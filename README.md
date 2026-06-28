@@ -103,6 +103,36 @@ src/
 4. `npx prisma migrate dev` (or `prisma migrate deploy` in CI), then
    `npm run build && npm start`.
 
+## Deployment
+
+Live at **https://atlas.kevinferretti.com**, hosted on the OVH box behind the
+shared [ovh-edge-proxy](https://github.com/kevinferretti/ovh-edge-proxy) Caddy
+instance — same pattern as movement-break.
+
+**Auto-deploy:** every push to `main` runs [.github/workflows/deploy.yml](.github/workflows/deploy.yml),
+which builds the app, joins the tailnet, SSHes to the box, and runs
+`docker compose -p logging-atlas -f deploy/ovh/docker-compose.yml up -d --build`.
+The container attaches to the external `edge-proxy` network with alias `atlas`;
+the proxy routes `atlas.kevinferretti.com → atlas:3000`.
+
+**Persistence:** the SQLite database lives on the host at
+`/opt/logging-atlas/shared/atlas.db` (bind-mounted), so it survives redeploys.
+On boot the container runs `prisma db push` and seeds the demo account only if
+the database is empty.
+
+**Required repo secrets:** `OVH_SSH_PRIVATE_KEY`, `OVH_SSH_KNOWN_HOSTS`,
+`AUTH_SECRET`, and the Tailscale `TS_OAUTH_CLIENT_ID` / `TS_AUDIENCE` (the same
+Tailscale OAuth client used by the other OVH apps).
+
+## Going to production (Postgres)
+
+The deploy above uses SQLite on a persistent volume. To move to Postgres
+instead:
+
+1. In `prisma/schema.prisma`, set `provider = "postgresql"`.
+2. Point `DATABASE_URL` at your Postgres instance.
+3. Swap the entrypoint's `prisma db push` for `prisma migrate deploy`.
+
 ## Useful scripts
 
 | Script              | Does                                            |

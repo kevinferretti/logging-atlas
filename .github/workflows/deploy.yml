@@ -1,0 +1,239 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  # The box firewalls public SSH; deploys reach it over the tailnet, same as
+  # the movement-break / ovh-edge-proxy repos.
+  DEPLOY_HOST: 100.78.38.82
+  DEPLOY_PORT: '22'
+  DEPLOY_USER: codex
+  DEPLOY_ROOT: /opt/logging-atlas
+  APP_PORT: '3000'
+  PUBLIC_URL: https://atlas.kevinferretti.com
+  DATABASE_URL: file:/opt/logging-atlas/shared/atlas.db
+  TAILSCALE_TAGS: tag:github-actions
+  SSH_CONNECT_TIMEOUT: '15'
+  SSH_RETRY_ATTEMPTS: '5'
+  SSH_RETRY_DELAY: '10'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      OVH_SSH_PRIVATE_KEY: ${{ secrets.OVH_SSH_PRIVATE_KEY }}
+      OVH_SSH_KNOWN_HOSTS: ${{ secrets.OVH_SSH_KNOWN_HOSTS }}
+      TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+      TS_AUDIENCE: ${{ secrets.TS_AUDIENCE }}
+      AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+      DEPLOY_SECRETS_CONFIGURED: ${{ secrets.OVH_SSH_PRIVATE_KEY != '' && secrets.OVH_SSH_KNOWN_HOSTS != '' && secrets.TS_OAUTH_CLIENT_ID != '' && secrets.TS_AUDIENCE != '' && secrets.AUTH_SECRET != '' }}
+
+    steps:
+      - name: Check required secrets
+        if: env.DEPLOY_SECRETS_CONFIGURED != 'true'
+        run: |
+          echo "::error::Deployment requires OVH_SSH_PRIVATE_KEY, OVH_SSH_KNOWN_HOSTS, AUTH_SECRET, and the Tailscale TS_OAUTH_CLIENT_ID / TS_AUDIENCE (same values used by kevinferretti/movement-break)."
+          exit 1
+
+      - name: Checkout
+        if: env.DEPLOY_SECRETS_CONFIGURED == 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        if: env.DEPLOY_SECRETS_CONFIGURED == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        if: env.DEPLOY_SECRETS_CONFIGURED == 'true'
+        run: npm ci
+
+      - name: Verify build
+        if: env.DEPLOY_SECRETS_CONFIGURED == 'true'
+        env:
+          DATABASE_URL: file:/tmp/build.db
+        run: npm run build
+
+      - name: Connect to tailnet
+        if: env.DEPLOY_SECRETS_CONFIGURED == 'true'
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          audience: ${{ secrets.TS_AUDIENCE }}
+          tags: ${{ env.TAILSCALE_TAGS }}
+          ping: ${{ env.DEPLOY_HOST }}
+
+      - name: Prepare SSH
+        if: env.DEPLOY_SECRETS_CONFIGURED == 'true'
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$OVH_SSH_PRIVATE_KEY" > ~/.ssh/atlas_deploy
+          chmod 600 ~/.ssh/atlas_deploy
+          printf '%s\n' "$OVH_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Check SSH reachability
+        if: env.DEPLOY_SECRETS_CONFIGURED == 'true'
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 "$SSH_RETRY_ATTEMPTS"); do
+            echo "SSH reachability attempt $attempt/$SSH_RETRY_ATTEMPTS"
+            if ssh-keyscan -T "$SSH_CONNECT_TIMEOUT" -p "$DEPLOY_PORT" -t ed25519 "$DEPLOY_HOST" >/dev/null 2>&1; then
+              exit 0
+            fi
+            if [ "$attempt" -lt "$SSH_RETRY_ATTEMPTS" ]; then
+              sleep "$SSH_RETRY_DELAY"
+            fi
+          done
+          echo "Timed out connecting to $DEPLOY_HOST:$DEPLOY_PORT from GitHub Actions." >&2
+          exit 1
+
+      - name: Package release
+        if: env.DEPLOY_SECRETS_CONFIGURED == 'true'
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/logging-atlas-${GITHUB_SHA}.tgz"
+          tar \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='.next' \
+            --exclude='.env' \
+            --exclude='.env.*' \
+            --exclude='*.tgz' \
+            -czf "$archive" .
+          cp "$archive" logging-atlas-${GITHUB_SHA}.tgz
+
+      - name: Write production env
+        if: env.DEPLOY_SECRETS_CONFIGURED == 'true'
+        run: |
+          set -euo pipefail
+          {
+            printf 'NODE_ENV=production\n'
+            printf 'PORT=%s\n' "$APP_PORT"
+            printf 'DATABASE_URL=%s\n' "$DATABASE_URL"
+            printf 'AUTH_SECRET=%s\n' "$AUTH_SECRET"
+          } > logging-atlas.env
+          chmod 600 logging-atlas.env
+
+      - name: Upload release
+        if: env.DEPLOY_SECRETS_CONFIGURED == 'true'
+        run: |
+          set -euo pipefail
+          ssh_options=(
+            -i ~/.ssh/atlas_deploy
+            -o BatchMode=yes
+            -o ConnectTimeout="$SSH_CONNECT_TIMEOUT"
+            -o ConnectionAttempts=1
+            -o ServerAliveInterval=15
+            -o ServerAliveCountMax=2
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts"
+          )
+          for attempt in $(seq 1 "$SSH_RETRY_ATTEMPTS"); do
+            echo "Upload attempt $attempt/$SSH_RETRY_ATTEMPTS"
+            if scp "${ssh_options[@]}" -P "$DEPLOY_PORT" \
+              logging-atlas-${GITHUB_SHA}.tgz logging-atlas.env \
+              "$DEPLOY_USER@$DEPLOY_HOST:/tmp/"; then
+              exit 0
+            fi
+            if [ "$attempt" -lt "$SSH_RETRY_ATTEMPTS" ]; then
+              sleep "$SSH_RETRY_DELAY"
+            fi
+          done
+          echo "Release upload failed after $SSH_RETRY_ATTEMPTS attempts." >&2
+          exit 1
+
+      - name: Activate release
+        if: env.DEPLOY_SECRETS_CONFIGURED == 'true'
+        run: |
+          set -euo pipefail
+          ssh_options=(
+            -i ~/.ssh/atlas_deploy
+            -o BatchMode=yes
+            -o ConnectTimeout="$SSH_CONNECT_TIMEOUT"
+            -o ConnectionAttempts=1
+            -o ServerAliveInterval=15
+            -o ServerAliveCountMax=2
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts"
+          )
+
+          activate_release() {
+            ssh "${ssh_options[@]}" -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+              "GITHUB_SHA='$GITHUB_SHA' DEPLOY_ROOT='$DEPLOY_ROOT' APP_PORT='$APP_PORT' bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          release="$DEPLOY_ROOT/releases/$GITHUB_SHA"
+          sudo mkdir -p "$DEPLOY_ROOT/releases" "$DEPLOY_ROOT/shared"
+          sudo chown -R "$USER:$USER" "$DEPLOY_ROOT"
+
+          mkdir -p "$release"
+          tar -xzf "/tmp/logging-atlas-$GITHUB_SHA.tgz" -C "$release"
+          mv /tmp/logging-atlas.env "$DEPLOY_ROOT/shared/.env"
+          chmod 600 "$DEPLOY_ROOT/shared/.env"
+          ln -sfn "$DEPLOY_ROOT/shared/.env" "$release/.env"
+
+          ln -sfn "$release" "$DEPLOY_ROOT/current"
+
+          docker network create edge-proxy >/dev/null 2>&1 || true
+
+          if ! docker ps --filter 'name=^/edge-proxy-caddy-1$' --filter 'status=running' \
+            --format '{{.Names}}' | grep -qx edge-proxy-caddy-1; then
+            echo "edge-proxy is not running. Deploy kevinferretti/ovh-edge-proxy first." >&2
+            exit 1
+          fi
+
+          cd "$release"
+          docker compose -p logging-atlas -f deploy/ovh/docker-compose.yml up -d --build --remove-orphans
+          for attempt in $(seq 1 30); do
+            if docker compose -p logging-atlas -f deploy/ovh/docker-compose.yml exec -T app \
+              node -e "fetch('http://127.0.0.1:$APP_PORT/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"; then
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              echo "Atlas container did not become healthy." >&2
+              docker compose -p logging-atlas -f deploy/ovh/docker-compose.yml logs --tail=120 app >&2
+              exit 1
+            fi
+            sleep 2
+          done
+
+          current_release="$(readlink -f "$DEPLOY_ROOT/current")"
+          find "$DEPLOY_ROOT/releases" -mindepth 1 -maxdepth 1 -type d ! -samefile "$current_release" -printf '%T@ %p\n' \
+            | sort -n \
+            | head -n -4 \
+            | cut -d' ' -f2- \
+            | xargs -r rm -rf
+          REMOTE
+          }
+
+          for attempt in $(seq 1 "$SSH_RETRY_ATTEMPTS"); do
+            echo "Activation attempt $attempt/$SSH_RETRY_ATTEMPTS"
+            if activate_release; then
+              exit 0
+            fi
+            if [ "$attempt" -lt "$SSH_RETRY_ATTEMPTS" ]; then
+              sleep "$SSH_RETRY_DELAY"
+            fi
+          done
+          echo "Release activation failed after $SSH_RETRY_ATTEMPTS attempts." >&2
+          exit 1
+
+      - name: Verify public endpoint
+        if: env.DEPLOY_SECRETS_CONFIGURED == 'true'
+        run: |
+          set -euo pipefail
+          curl --fail --retry 10 --retry-delay 3 --retry-all-errors "$PUBLIC_URL/api/health"
