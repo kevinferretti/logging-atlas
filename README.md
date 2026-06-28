@@ -46,6 +46,10 @@ your own account — it starts with an empty atlas and the **＋ Log** button.
   Clicking a country (or an item in the **Index** rail) opens its passport.
 - **Log an entry** (per‑country, or the global **＋ Log** modal) POSTs to the
   API and updates the globe live. Entries persist per account.
+- **Logbook** (`/logbook`) is the second view: a passport page where every entry
+  is a worn rubber‑stamp impression (round / oval / rect / hex / cog in category
+  ink), clustered and paged country by country — from a quiet visit to a
+  well‑worn passport.
 - Themes: a **Theme** button cycles three palettes (Sepia Atlas, Kraft &
   Oxblood, Midnight Customs).
 
@@ -70,12 +74,14 @@ prisma/
 src/
   app/
     page.tsx        authed home → AtlasApp
+    logbook/        the stamped logbook page
     login/          auth screen
     api/            auth + entries route handlers
   components/
     AtlasApp.tsx    world chrome, state, API wiring
     Globe.tsx       d3-geo canvas globe engine (ported from the export)
     Passport.tsx    per-country detail page
+    Logbook.tsx     worn-ink stamp cluster, paged by country
     LogModal.tsx    global "log an entry" modal
     AuthForm.tsx    sign in / create account
   lib/
@@ -85,6 +91,7 @@ src/
     categories.ts   recipe / book / movie / music / place
     palettes.ts     the three themes
     stamps.ts       postmark / postage SVG builders
+    inkstamps.ts    worn rubber-stamp SVG builders (logbook)
     logbook.ts      group entries → per-country records
 ```
 
