@@ -135,10 +135,8 @@ export default function Passport({ country, palette, onBack, onAdd, onDelete }: 
                 position: "relative",
                 width: cluster.width * heroScale,
                 height: cluster.height * heroScale,
-                background: "#F3EAD6",
-                border: "1px solid #CBBF9E",
-                borderRadius: 4,
-                boxShadow: "0 10px 30px rgba(40,28,12,.22)",
+                background:
+                  "radial-gradient(ellipse 80% 84% at 50% 48%, #F3EAD6 0%, #F3EAD6 54%, rgba(243,234,214,0) 100%)",
                 overflow: "hidden",
               }}
             >
