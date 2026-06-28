@@ -75,7 +75,7 @@ export default function LogModal({ onClose, onSave }: LogModalProps) {
           })}
         </div>
 
-        <input value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save()} placeholder="Title — e.g. Shakshuka, Persepolis…" style={inputStyle} autoFocus />
+        <input value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save()} placeholder="Title" style={inputStyle} autoFocus />
         <input value={by} onChange={(e) => setBy(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save()} placeholder="By / author / director / artist (optional)" style={inputStyle} />
 
         {error && <div style={{ color: "var(--red)", fontFamily: "'EB Garamond',serif", fontSize: 14 }}>{error}</div>}

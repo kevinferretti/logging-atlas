@@ -221,7 +221,7 @@ export default function Passport({ country, palette, onBack, onAdd, onDelete }: 
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && save()}
-              placeholder="Title — e.g. Shakshuka, Persepolis, Buena Vista Social Club"
+              placeholder="Title"
               style={inputStyle}
               autoFocus
             />
