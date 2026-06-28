@@ -4,7 +4,9 @@ import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { CATEGORIES, catColor, catGlyph, catLabelOne } from "@/lib/categories";
 import { fmtCoord, subLine } from "@/lib/logbook";
-import { buildCountDisc, countCats } from "@/lib/stamps";
+import { countCats } from "@/lib/stamps";
+import { layoutCluster } from "@/lib/inkstamps";
+import InkFilters from "./InkFilters";
 import type { Palette } from "@/lib/palettes";
 import type { CategoryKey, Entry, LoggedCountry } from "@/lib/types";
 
@@ -33,10 +35,9 @@ export default function Passport({ country, palette, onBack, onAdd, onDelete }: 
   const [saving, setSaving] = useState(false);
 
   const counts = useMemo(() => countCats(country), [country]);
-  const hero = useMemo(
-    () => buildCountDisc(country, { size: 232, palette, label: "Entries" }),
-    [country, palette],
-  );
+  const cluster = useMemo(() => layoutCluster(country.entries, country.name), [country]);
+  const HERO_W = 380;
+  const heroScale = Math.min(1, HERO_W / cluster.width);
 
   const list = activeCat === "all" ? country.entries : country.entries.filter((e) => e.category === activeCat);
 
@@ -99,7 +100,7 @@ export default function Passport({ country, palette, onBack, onAdd, onDelete }: 
         </div>
 
         {/* Header + hero stamp */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 34, padding: "4px 2px 2px" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 34, padding: "4px 2px 2px", flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ ...mono, fontSize: 11, letterSpacing: 3, textTransform: "uppercase", color: "var(--sepia)", marginBottom: 10 }}>
               {country.region}
@@ -115,11 +116,32 @@ export default function Passport({ country, palette, onBack, onAdd, onDelete }: 
               </span>
             </div>
           </div>
-          <div
-            key={country.entries.length}
-            style={{ flex: "0 0 auto", filter: "drop-shadow(0 5px 9px rgba(40,28,12,.32))", animation: "om-press .55s cubic-bezier(.2,.8,.2,1)" }}
-            dangerouslySetInnerHTML={{ __html: hero }}
-          />
+          {/* Stamp cluster — one worn impression per logged entry, on a passport-page card */}
+          <div style={{ flex: "0 0 auto", animation: "om-rise .4s ease" }}>
+            <InkFilters />
+            <div
+              style={{
+                position: "relative",
+                width: cluster.width * heroScale,
+                height: cluster.height * heroScale,
+                background: "#F3EAD6",
+                border: "1px solid #CBBF9E",
+                borderRadius: 4,
+                boxShadow: "0 10px 30px rgba(40,28,12,.22)",
+                overflow: "hidden",
+              }}
+            >
+              <div style={{ position: "absolute", top: 0, left: 0, width: cluster.width, height: cluster.height, transform: `scale(${heroScale})`, transformOrigin: "top left" }}>
+                {cluster.stamps.map((s) => (
+                  <div
+                    key={s.key}
+                    style={{ position: "absolute", width: s.size, height: s.size, left: s.left, top: s.top, transform: `rotate(${s.rot}deg)`, mixBlendMode: "multiply", zIndex: s.z }}
+                    dangerouslySetInnerHTML={{ __html: s.svg }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         <div style={{ height: 1, background: "repeating-linear-gradient(90deg,var(--line) 0,var(--line) 5px,transparent 5px,transparent 10px)", margin: "26px 0 20px" }} />

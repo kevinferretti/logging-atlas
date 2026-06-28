@@ -42,16 +42,14 @@ your own account — it starts with an empty atlas and the **＋ Log** button.
 
 - `GET /` (server component) reads the session cookie, loads that user's entries
   straight from the DB, and hands them to the client `AtlasApp`.
-- The globe spins, highlights logged countries, and drops a stamp on each.
-  Clicking a country (or an item in the **Index** rail) opens its passport.
-- **Log an entry** (per‑country, or the global **＋ Log** modal) POSTs to the
+- The globe spins, highlights logged countries, and drops a marker on each.
+  Clicking a country (or an item in the **Index** tab) opens its passport.
+- The **passport** (country detail) page shows that country's entries as a
+  cluster of worn rubber‑stamp impressions (round / oval / rect / hex / cog in
+  category ink) on a passport‑page card, plus category tabs and entry cards.
+- **Log an entry** (per‑country, or the global **＋ Log** button) POSTs to the
   API and updates the globe live. Entries persist per account.
-- **Logbook** (`/logbook`) is the second view: a passport page where every entry
-  is a worn rubber‑stamp impression (round / oval / rect / hex / cog in category
-  ink), clustered and paged country by country — from a quiet visit to a
-  well‑worn passport.
-- Themes: a **Theme** button cycles three palettes (Sepia Atlas, Kraft &
-  Oxblood, Midnight Customs).
+- Themes: a **Light / Dark** toggle, remembered per account.
 
 ### API
 
@@ -74,14 +72,13 @@ prisma/
 src/
   app/
     page.tsx        authed home → AtlasApp
-    logbook/        the stamped logbook page
     login/          auth screen
-    api/            auth + entries route handlers
+    api/            auth + entries + files + preferences route handlers
   components/
-    AtlasApp.tsx    world chrome, state, API wiring
+    AtlasApp.tsx    world chrome, state, API wiring (globe/map/index tabs)
     Globe.tsx       d3-geo canvas globe engine (ported from the export)
-    Passport.tsx    per-country detail page
-    Logbook.tsx     worn-ink stamp cluster, paged by country
+    Passport.tsx    per-country detail page (incl. the stamp cluster)
+    InkFilters.tsx  SVG turbulence filters for the worn-ink stamps
     LogModal.tsx    global "log an entry" modal
     AuthForm.tsx    sign in / create account
   lib/
@@ -89,9 +86,10 @@ src/
     db.ts           Prisma client
     countries.ts    loggable country catalog (keyed by world-atlas id)
     categories.ts   recipe / book / movie / music / place
-    palettes.ts     the three themes
-    stamps.ts       postmark / postage SVG builders
-    inkstamps.ts    worn rubber-stamp SVG builders (logbook)
+    palettes.ts     light + dark themes
+    stamps.ts       count-disc marker builder
+    inkstamps.ts    worn rubber-stamp SVG builders + cluster layout
+    uploads.ts      recipe file storage helpers
     logbook.ts      group entries → per-country records
 ```
 

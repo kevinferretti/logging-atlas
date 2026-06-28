@@ -144,9 +144,6 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
             <div style={{ fontFamily: "'EB Garamond',serif", fontSize: 14, color: "var(--ink)" }}>{user.name ?? user.email}</div>
             <div style={{ display: "flex", gap: 8 }}>
-              <a href="/logbook" title="View the stamped logbook" style={{ ...miniBtn, textDecoration: "none", display: "inline-block" }}>
-                Logbook
-              </a>
               <div style={{ display: "inline-flex", border: "1px solid var(--line)", borderRadius: 2, overflow: "hidden" }}>
                 {([["Light", "Sepia Atlas"], ["Dark", "Midnight Customs"]] as [string, PaletteName][]).map(([label, name]) => {
                   const on = paletteName === name;
