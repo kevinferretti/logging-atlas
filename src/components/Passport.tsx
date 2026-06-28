@@ -12,14 +12,13 @@ export interface NewEntryInput {
   countryId: string;
   category: CategoryKey;
   title: string;
-  by: string;
 }
 
 interface PassportProps {
   country: LoggedCountry;
   palette: Palette;
   onBack: () => void;
-  onAdd: (input: NewEntryInput) => Promise<void>;
+  onAdd: (input: NewEntryInput, file?: File | null) => Promise<void>;
   onDelete: (entryId: string) => Promise<void>;
 }
 
@@ -30,7 +29,7 @@ export default function Passport({ country, palette, onBack, onAdd, onDelete }: 
   const [adding, setAdding] = useState(false);
   const [formCat, setFormCat] = useState<CategoryKey>("recipe");
   const [title, setTitle] = useState("");
-  const [by, setBy] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
 
   const counts = useMemo(() => countCats(country), [country]);
@@ -46,9 +45,9 @@ export default function Passport({ country, palette, onBack, onAdd, onDelete }: 
     if (!t || saving) return;
     setSaving(true);
     try {
-      await onAdd({ countryId: country.id, category: formCat, title: t, by: by.trim() });
+      await onAdd({ countryId: country.id, category: formCat, title: t }, formCat === "recipe" ? file : null);
       setTitle("");
-      setBy("");
+      setFile(null);
       setAdding(false);
     } finally {
       setSaving(false);
@@ -198,7 +197,10 @@ export default function Passport({ country, palette, onBack, onAdd, onDelete }: 
                 return (
                   <button
                     key={c.key}
-                    onClick={() => setFormCat(c.key)}
+                    onClick={() => {
+                      setFormCat(c.key);
+                      if (c.key !== "recipe") setFile(null);
+                    }}
                     style={{
                       padding: "7px 12px",
                       borderRadius: 2,
@@ -221,17 +223,20 @@ export default function Passport({ country, palette, onBack, onAdd, onDelete }: 
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && save()}
-              placeholder="Title"
+              placeholder="What did you log?"
               style={inputStyle}
               autoFocus
             />
-            <input
-              value={by}
-              onChange={(e) => setBy(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && save()}
-              placeholder="By / author / director / artist (optional)"
-              style={inputStyle}
-            />
+            {formCat === "recipe" && (
+              <label style={{ ...mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: "var(--ink-soft)", display: "flex", flexDirection: "column", gap: 6 }}>
+                Recipe file (optional)
+                <input
+                  type="file"
+                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  style={{ fontFamily: "'EB Garamond',serif", fontSize: 14, color: "var(--ink)" }}
+                />
+              </label>
+            )}
             <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
               <button
                 onClick={save}
@@ -376,6 +381,21 @@ function EntryCard({ entry: e, index: i, onDelete }: { entry: Entry; index: numb
         </div>
       </div>
       {e.note && <div style={{ fontFamily: "'EB Garamond',serif", fontSize: 13.5, lineHeight: 1.42, color: "var(--ink-soft)" }}>{e.note}</div>}
+      {e.fileKey && (
+        <a href={`/api/files/${e.fileKey}`} target="_blank" rel="noreferrer" style={{ display: "block", textDecoration: "none", marginTop: 2 }}>
+          {e.fileType?.startsWith("image/") ? (
+            <img
+              src={`/api/files/${e.fileKey}`}
+              alt={e.fileName ?? "attachment"}
+              style={{ width: "100%", maxHeight: 140, objectFit: "cover", borderRadius: 2, border: "1px solid var(--line)", display: "block" }}
+            />
+          ) : (
+            <span style={{ fontFamily: "'Special Elite',monospace", fontSize: 11, letterSpacing: 0.5, color: "var(--sepia)" }}>
+              📎 {e.fileName ?? "Attachment"}
+            </span>
+          )}
+        </a>
+      )}
       <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 8, paddingTop: 9, borderTop: "1px dashed var(--line)" }}>
         <span style={{ fontFamily: "'Special Elite',monospace", fontSize: 10, letterSpacing: 1, color: "var(--red)", transform: "rotate(-3deg)", display: "inline-block" }}>
           LOGGED&nbsp;’{String(e.year).slice(2)}

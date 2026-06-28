@@ -9,14 +9,14 @@ import type { CategoryKey } from "@/lib/types";
 
 interface LogModalProps {
   onClose: () => void;
-  onSave: (input: NewEntryInput) => Promise<void>;
+  onSave: (input: NewEntryInput, file?: File | null) => Promise<void>;
 }
 
 export default function LogModal({ onClose, onSave }: LogModalProps) {
   const [countryId, setCountryId] = useState(COUNTRY_CATALOG_SORTED[0]?.id ?? "");
   const [category, setCategory] = useState<CategoryKey>("recipe");
   const [title, setTitle] = useState("");
-  const [by, setBy] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,7 +26,7 @@ export default function LogModal({ onClose, onSave }: LogModalProps) {
     setSaving(true);
     setError(null);
     try {
-      await onSave({ countryId, category, title: t, by: by.trim() });
+      await onSave({ countryId, category, title: t }, category === "recipe" ? file : null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save entry.");
       setSaving(false);
@@ -63,7 +63,10 @@ export default function LogModal({ onClose, onSave }: LogModalProps) {
             return (
               <button
                 key={c.key}
-                onClick={() => setCategory(c.key)}
+                onClick={() => {
+                  setCategory(c.key);
+                  if (c.key !== "recipe") setFile(null);
+                }}
                 style={{ padding: "7px 12px", borderRadius: 2, cursor: "pointer", fontFamily: "'Special Elite',monospace", fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", border: `1px solid ${on ? c.color : "var(--line)"}`, background: on ? c.color : "transparent", color: on ? "#F5EEDD" : "var(--ink-soft)" }}
               >
                 {c.label}
@@ -72,8 +75,13 @@ export default function LogModal({ onClose, onSave }: LogModalProps) {
           })}
         </div>
 
-        <input value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save()} placeholder="Title" style={inputStyle} autoFocus />
-        <input value={by} onChange={(e) => setBy(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save()} placeholder="By / author / director / artist (optional)" style={inputStyle} />
+        <input value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save()} placeholder="What did you log?" style={inputStyle} autoFocus />
+        {category === "recipe" && (
+          <label style={labelStyle}>
+            Recipe file (optional)
+            <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} style={{ fontFamily: "'EB Garamond',serif", fontSize: 14, color: "var(--ink)" }} />
+          </label>
+        )}
 
         {error && <div style={{ color: "var(--red)", fontFamily: "'EB Garamond',serif", fontSize: 14 }}>{error}</div>}
 

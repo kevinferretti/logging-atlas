@@ -8,6 +8,9 @@ export interface Entry {
   by: string;
   note: string;
   year: number;
+  fileName: string | null;
+  fileKey: string | null;
+  fileType: string | null;
 }
 
 /** A country with its logged entries, assembled on the client from the catalog. */

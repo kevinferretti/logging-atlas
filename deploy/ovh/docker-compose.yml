@@ -12,6 +12,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: "3000"
+      # Uploaded files land on the persistent shared volume.
+      UPLOAD_DIR: /opt/logging-atlas/shared/uploads
     volumes:
       # Persists the SQLite database across redeploys.
       - ${ATLAS_SHARED_DIR:-/opt/logging-atlas/shared}:/opt/logging-atlas/shared

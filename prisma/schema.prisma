@@ -36,6 +36,11 @@ model Entry {
   by        String   @default("")
   note      String   @default("")
   year      Int
+  // Optional attachment (currently used for recipe uploads). The file is stored
+  // on the persistent volume under UPLOAD_DIR; fileKey is its on-disk name.
+  fileName  String?
+  fileKey   String?
+  fileType  String?
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -39,12 +39,13 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
     setView("world");
   }
 
-  async function addEntry(input: NewEntryInput): Promise<Entry> {
-    const res = await fetch("/api/entries", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
-    });
+  async function addEntry(input: NewEntryInput, file?: File | null): Promise<Entry> {
+    const fd = new FormData();
+    fd.append("countryId", input.countryId);
+    fd.append("category", input.category);
+    fd.append("title", input.title);
+    if (file) fd.append("file", file);
+    const res = await fetch("/api/entries", { method: "POST", body: fd });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.error ?? "Could not save entry.");
@@ -198,8 +199,8 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
           country={selected}
           palette={palette}
           onBack={goWorld}
-          onAdd={async (input) => {
-            await addEntry(input);
+          onAdd={async (input, file) => {
+            await addEntry(input, file);
           }}
           onDelete={deleteEntry}
         />
@@ -209,8 +210,8 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
       {logOpen && (
         <LogModal
           onClose={() => setLogOpen(false)}
-          onSave={async (input) => {
-            await addEntry(input);
+          onSave={async (input, file) => {
+            await addEntry(input, file);
             setLogOpen(false);
             openCountry(input.countryId);
           }}

@@ -12,7 +12,7 @@ export default async function LogbookPage() {
   const rows = await prisma.entry.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "asc" },
-    select: { id: true, countryId: true, category: true, title: true, by: true, note: true, year: true },
+    select: { id: true, countryId: true, category: true, title: true, by: true, note: true, year: true, fileName: true, fileKey: true, fileType: true },
   });
   const entries: Entry[] = rows.map((r) => ({ ...r, category: r.category as CategoryKey }));
 
