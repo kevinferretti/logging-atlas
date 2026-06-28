@@ -99,9 +99,6 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 5, display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "22px 30px", pointerEvents: "none" }}>
         <div style={{ pointerEvents: "auto" }}>
           <div style={{ fontFamily: "Marcellus,serif", fontSize: 25, letterSpacing: 7, color: "var(--ink)" }}>ATLAS</div>
-          <div style={{ fontFamily: "'Special Elite',monospace", fontSize: 9, letterSpacing: 2.5, color: "var(--sepia)", marginTop: 3 }}>
-            A PASSPORT OF THINGS LOGGED
-          </div>
         </div>
         <div style={{ pointerEvents: "auto", display: "flex", gap: 22, alignItems: "flex-start", textAlign: "right" }}>
           <Stat value={countries.length} label="COUNTRIES" />
@@ -161,9 +158,6 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
             <button onClick={() => setLogOpen(true)} style={{ ...miniBtn, borderColor: "var(--sepia)", color: "var(--sepia)" }}>
               ＋ Log
             </button>
-          </div>
-          <div style={{ fontFamily: "'EB Garamond',serif", fontStyle: "italic", fontSize: 13, color: "var(--ink-soft)", marginTop: 2 }}>
-            Your logged world, by volume
           </div>
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: 7 }}>

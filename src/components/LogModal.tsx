@@ -44,9 +44,6 @@ export default function LogModal({ onClose, onSave }: LogModalProps) {
       >
         <div>
           <div style={{ fontFamily: "Marcellus,serif", fontSize: 24, color: "var(--ink)" }}>Log an entry</div>
-          <div style={{ fontFamily: "'Special Elite',monospace", fontSize: 10, letterSpacing: 1.6, color: "var(--sepia)", marginTop: 4, textTransform: "uppercase" }}>
-            Stamp something into your atlas
-          </div>
         </div>
 
         <label style={labelStyle}>

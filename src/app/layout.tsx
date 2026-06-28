@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Atlas — A Passport of Things Logged",
+  title: "Atlas",
   description:
     "Log the recipes, books, films, music, and places you've experienced from around the world, stamped onto a vintage globe.",
 };

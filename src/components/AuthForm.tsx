@@ -50,9 +50,6 @@ export default function AuthForm() {
       <div style={{ width: "100%", maxWidth: 420 }}>
         <div style={{ textAlign: "center", marginBottom: 26 }}>
           <div style={{ fontFamily: "Marcellus,serif", fontSize: 34, letterSpacing: 9, color: "var(--ink)" }}>ATLAS</div>
-          <div style={{ fontFamily: "'Special Elite',monospace", fontSize: 10, letterSpacing: 3, color: "var(--sepia)", marginTop: 6 }}>
-            A PASSPORT OF THINGS LOGGED
-          </div>
         </div>
 
         <div style={{ background: "var(--paper2)", border: "1px solid var(--line)", borderRadius: 5, boxShadow: "0 18px 46px rgba(40,28,12,.18)", padding: 26 }}>
