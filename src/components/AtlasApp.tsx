@@ -7,7 +7,7 @@ import Passport, { type NewEntryInput } from "./Passport";
 import LogModal from "./LogModal";
 import { assembleCountries } from "@/lib/logbook";
 import { buildCountDisc } from "@/lib/stamps";
-import { getPalette, paletteCssVars, PALETTE_NAMES, type PaletteName } from "@/lib/palettes";
+import { getPalette, paletteCssVars, type PaletteName } from "@/lib/palettes";
 import type { Entry, SessionUser } from "@/lib/types";
 
 interface AtlasAppProps {
@@ -137,9 +137,20 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
               <a href="/logbook" title="View the stamped logbook" style={{ ...miniBtn, textDecoration: "none", display: "inline-block" }}>
                 Logbook
               </a>
-              <button onClick={cyclePalette} title="Change theme" style={miniBtn}>
-                Theme
-              </button>
+              <div style={{ display: "inline-flex", border: "1px solid var(--line)", borderRadius: 2, overflow: "hidden" }}>
+                {([["Light", "Sepia Atlas"], ["Dark", "Midnight Customs"]] as [string, PaletteName][]).map(([label, name]) => {
+                  const on = paletteName === name;
+                  return (
+                    <button
+                      key={label}
+                      onClick={() => setPaletteName(name)}
+                      style={{ border: "none", padding: "5px 9px", cursor: "pointer", fontFamily: "'Special Elite',monospace", fontSize: 9.5, letterSpacing: 1, textTransform: "uppercase", background: on ? "var(--ink)" : "transparent", color: on ? "var(--paper)" : "var(--ink-soft)", transition: "all .15s ease" }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
               <button onClick={logout} style={miniBtn}>
                 Sign out
               </button>
@@ -249,13 +260,6 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
       )}
     </div>
   );
-
-  function cyclePalette() {
-    setPaletteName((prev) => {
-      const i = PALETTE_NAMES.indexOf(prev);
-      return PALETTE_NAMES[(i + 1) % PALETTE_NAMES.length];
-    });
-  }
 }
 
 function Stat({ value, label }: { value: number; label: string }) {

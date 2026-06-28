@@ -18,7 +18,7 @@ export interface Palette {
   vignette: string;
 }
 
-export type PaletteName = "Sepia Atlas" | "Kraft & Oxblood" | "Midnight Customs";
+export type PaletteName = "Sepia Atlas" | "Midnight Customs";
 
 export const PALETTES: Record<PaletteName, Palette> = {
   "Sepia Atlas": {
@@ -26,12 +26,6 @@ export const PALETTES: Record<PaletteName, Palette> = {
     line: "#CBBF9E", sepia: "#8A5A3B", teal: "#5E7A6F", gold: "#A9762F", red: "#9B4A39",
     ocean: "#C7C09F", oceanHi: "#D8D1B0", land: "#E3D7B8", landLogged: "#D6BC88", coast: "#A98F66",
     graticule: "rgba(120,100,70,0.16)", vignette: "rgba(60,46,24,0.34)",
-  },
-  "Kraft & Oxblood": {
-    paper: "#E7D9BD", paper2: "#F1E6CC", panel: "#DECCA8", ink: "#2A231C", inkSoft: "#6E5E49",
-    line: "#C8B894", sepia: "#7B4A2D", teal: "#4E6152", gold: "#B8860B", red: "#7B2D26",
-    ocean: "#CFC09C", oceanHi: "#DCCEA9", land: "#E0CFA6", landLogged: "#CBAA72", coast: "#9A7B4F",
-    graticule: "rgba(110,80,50,0.18)", vignette: "rgba(48,34,18,0.36)",
   },
   "Midnight Customs": {
     paper: "#1E232C", paper2: "#272E39", panel: "#2E3441", ink: "#ECE3CE", inkSoft: "#9C9783",
