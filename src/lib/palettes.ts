@@ -41,6 +41,11 @@ export function getPalette(name: string): Palette {
   return PALETTES[name as PaletteName] ?? PALETTES["Sepia Atlas"];
 }
 
+/** Coerce an arbitrary stored value to a valid palette name (default: light). */
+export function coercePaletteName(value: string | null | undefined): PaletteName {
+  return value && value in PALETTES ? (value as PaletteName) : "Sepia Atlas";
+}
+
 /** Map a palette onto the CSS custom properties the UI reads. */
 export function paletteCssVars(p: Palette): Record<string, string> {
   return {

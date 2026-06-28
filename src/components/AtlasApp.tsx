@@ -7,7 +7,7 @@ import Passport, { type NewEntryInput } from "./Passport";
 import LogModal from "./LogModal";
 import { assembleCountries } from "@/lib/logbook";
 import { buildCountDisc } from "@/lib/stamps";
-import { getPalette, paletteCssVars, type PaletteName } from "@/lib/palettes";
+import { coercePaletteName, getPalette, paletteCssVars, type PaletteName } from "@/lib/palettes";
 import type { Entry, SessionUser } from "@/lib/types";
 
 interface AtlasAppProps {
@@ -23,7 +23,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
   const [view, setView] = useState<"world" | "passport">("world");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("globe");
-  const [paletteName, setPaletteName] = useState<PaletteName>("Sepia Atlas");
+  const [paletteName, setPaletteName] = useState<PaletteName>(coercePaletteName(user.theme));
   const [logOpen, setLogOpen] = useState(false);
 
   const globeMode: GlobeMode = tab === "map" ? "map" : "globe";
@@ -77,6 +77,16 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
     await fetch("/api/auth/logout", { method: "POST" });
     router.replace("/login");
     router.refresh();
+  }
+
+  function chooseTheme(name: PaletteName) {
+    setPaletteName(name);
+    // Persist to the account; best-effort, the UI already updated.
+    fetch("/api/preferences", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ theme: name }),
+    }).catch(() => {});
   }
 
   const rootStyle = {
@@ -143,7 +153,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
                   return (
                     <button
                       key={label}
-                      onClick={() => setPaletteName(name)}
+                      onClick={() => chooseTheme(name)}
                       style={{ border: "none", padding: "5px 9px", cursor: "pointer", fontFamily: "'Special Elite',monospace", fontSize: 9.5, letterSpacing: 1, textTransform: "uppercase", background: on ? "var(--ink)" : "transparent", color: on ? "var(--paper)" : "var(--ink-soft)", transition: "all .15s ease" }}
                     >
                       {label}

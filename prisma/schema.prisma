@@ -19,6 +19,7 @@ model User {
   email        String   @unique
   name         String?
   passwordHash String
+  theme        String   @default("Sepia Atlas") // remembered light/dark choice
   createdAt    DateTime @default(now())
 
   entries Entry[]
