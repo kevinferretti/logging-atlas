@@ -6,17 +6,14 @@ import Globe, { type GlobeMode } from "./Globe";
 import Passport, { type NewEntryInput } from "./Passport";
 import LogModal from "./LogModal";
 import { assembleCountries } from "@/lib/logbook";
-import { buildStampSVG } from "@/lib/stamps";
+import { buildCountDisc } from "@/lib/stamps";
 import { getPalette, paletteCssVars, PALETTE_NAMES, type PaletteName } from "@/lib/palettes";
-import type { StampStyle } from "@/lib/stamps";
 import type { Entry, SessionUser } from "@/lib/types";
 
 interface AtlasAppProps {
   user: SessionUser;
   initialEntries: Entry[];
 }
-
-const stampStyle: StampStyle = "Round postmark";
 
 export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
   const router = useRouter();
@@ -93,7 +90,6 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
       <Globe
         countries={countries}
         palette={palette}
-        stampStyle={stampStyle}
         mode={mode}
         active={view === "world"}
         onSelect={openCountry}
@@ -184,14 +180,13 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
                 onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
                 style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", textAlign: "left", background: "none", border: "none", borderRadius: 3, padding: "8px 9px", cursor: "pointer", transition: "background .15s" }}
               >
-                <div style={{ flex: "0 0 auto", width: 42, height: 42, display: "flex", alignItems: "center", justifyContent: "center" }} dangerouslySetInnerHTML={{ __html: buildStampSVG(c, { size: 40, detail: "mini", style: stampStyle, palette }) }} />
+                <div style={{ flex: "0 0 auto", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center" }} dangerouslySetInnerHTML={{ __html: buildCountDisc(c, { size: 36, palette }) }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: "Marcellus,serif", fontSize: 15, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.name}</div>
                   <div style={{ height: 4, background: "var(--line)", borderRadius: 2, marginTop: 6, overflow: "hidden" }}>
                     <div style={{ width: `${Math.round((c.entries.length / maxEntries) * 100)}%`, height: "100%", background: "var(--sepia)", borderRadius: 2 }} />
                   </div>
                 </div>
-                <div style={{ flex: "0 0 auto", fontFamily: "'Special Elite',monospace", fontSize: 13, color: "var(--sepia)" }}>{c.entries.length}</div>
               </button>
             ))
           )}
@@ -200,7 +195,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
 
       {/* Hint */}
       <div style={{ position: "absolute", bottom: 22, left: "50%", transform: "translate(-50%,0)", zIndex: 5, fontFamily: "'Special Elite',monospace", fontSize: 10, letterSpacing: 1.6, color: "var(--ink-soft)", opacity: 0.72, pointerEvents: "none", whiteSpace: "nowrap" }}>
-        DRAG TO SPIN&nbsp;&nbsp;·&nbsp;&nbsp;SCROLL TO ZOOM&nbsp;&nbsp;·&nbsp;&nbsp;CLICK A STAMP TO OPEN ITS PASSPORT
+        DRAG TO SPIN&nbsp;&nbsp;·&nbsp;&nbsp;SCROLL TO ZOOM&nbsp;&nbsp;·&nbsp;&nbsp;CLICK A COUNTRY TO OPEN ITS PASSPORT
       </div>
 
       {/* PASSPORT OVERLAY */}
@@ -208,7 +203,6 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
         <Passport
           country={selected}
           palette={palette}
-          stampStyle={stampStyle}
           onBack={goWorld}
           onAdd={async (input) => {
             await addEntry(input);

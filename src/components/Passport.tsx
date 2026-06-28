@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { CATEGORIES, catColor, catGlyph, catLabelOne } from "@/lib/categories";
 import { fmtCoord, subLine } from "@/lib/logbook";
-import { buildStampSVG, countCats, type StampStyle } from "@/lib/stamps";
+import { buildCountDisc, countCats } from "@/lib/stamps";
 import type { Palette } from "@/lib/palettes";
 import type { CategoryKey, Entry, LoggedCountry } from "@/lib/types";
 
@@ -18,7 +18,6 @@ export interface NewEntryInput {
 interface PassportProps {
   country: LoggedCountry;
   palette: Palette;
-  stampStyle: StampStyle;
   onBack: () => void;
   onAdd: (input: NewEntryInput) => Promise<void>;
   onDelete: (entryId: string) => Promise<void>;
@@ -26,7 +25,7 @@ interface PassportProps {
 
 const mono: CSSProperties = { fontFamily: "'Special Elite',monospace" };
 
-export default function Passport({ country, palette, stampStyle, onBack, onAdd, onDelete }: PassportProps) {
+export default function Passport({ country, palette, onBack, onAdd, onDelete }: PassportProps) {
   const [activeCat, setActiveCat] = useState<"all" | CategoryKey>("all");
   const [adding, setAdding] = useState(false);
   const [formCat, setFormCat] = useState<CategoryKey>("recipe");
@@ -36,8 +35,8 @@ export default function Passport({ country, palette, stampStyle, onBack, onAdd, 
 
   const counts = useMemo(() => countCats(country), [country]);
   const hero = useMemo(
-    () => buildStampSVG(country, { size: 232, detail: "full", style: stampStyle, palette }),
-    [country, stampStyle, palette],
+    () => buildCountDisc(country, { size: 232, palette, label: "Entries" }),
+    [country, palette],
   );
 
   const list = activeCat === "all" ? country.entries : country.entries.filter((e) => e.category === activeCat);
@@ -191,7 +190,7 @@ export default function Passport({ country, palette, stampStyle, onBack, onAdd, 
             }}
           >
             <div style={{ ...mono, fontSize: 11, letterSpacing: 1.8, textTransform: "uppercase", color: "var(--ink-soft)" }}>
-              New entry — watch the stamp fill
+              New entry
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {CATEGORIES.map((c) => {

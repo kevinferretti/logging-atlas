@@ -11,7 +11,7 @@ import {
 } from "d3-geo";
 import { feature } from "topojson-client";
 import topoData from "world-atlas/countries-110m.json";
-import { buildGlobeMarker, type StampStyle } from "@/lib/stamps";
+import { buildCountDisc } from "@/lib/stamps";
 import type { Palette } from "@/lib/palettes";
 import type { LoggedCountry } from "@/lib/types";
 
@@ -20,7 +20,6 @@ export type GlobeMode = "globe" | "map";
 interface GlobeProps {
   countries: LoggedCountry[];
   palette: Palette;
-  stampStyle: StampStyle;
   mode: GlobeMode;
   active: boolean; // false while the passport overlay is open — pause the loop
   onSelect: (id: string) => void;
@@ -48,7 +47,6 @@ class GlobeEngine {
 
   countries: LoggedCountry[] = [];
   palette: Palette;
-  stampStyle: StampStyle;
   mode: GlobeMode = "globe";
   paused = false;
 
@@ -84,7 +82,6 @@ class GlobeEngine {
     markers: HTMLDivElement;
     tooltip: HTMLDivElement;
     palette: Palette;
-    stampStyle: StampStyle;
     mode: GlobeMode;
     onSelect: (id: string) => void;
   }) {
@@ -93,7 +90,6 @@ class GlobeEngine {
     this.markers = opts.markers;
     this.tooltip = opts.tooltip;
     this.palette = opts.palette;
-    this.stampStyle = opts.stampStyle;
     this.mode = opts.mode;
     this.onSelect = opts.onSelect;
   }
@@ -140,10 +136,6 @@ class GlobeEngine {
       this.buildMarkers();
       this.draw();
     }
-  }
-  setStampStyle(s: StampStyle) {
-    this.stampStyle = s;
-    if (this.features.length) this.buildMarkers();
   }
   pause() {
     this.paused = true;
@@ -320,7 +312,7 @@ class GlobeEngine {
       const el = document.createElement("div");
       el.style.cssText =
         "position:absolute;left:0;top:0;will-change:transform,opacity;filter:drop-shadow(0 2px 3px rgba(40,28,12,.4));";
-      el.innerHTML = buildGlobeMarker(c, { size: sz, palette: this.palette });
+      el.innerHTML = buildCountDisc(c, { size: sz, palette: this.palette });
       layer.appendChild(el);
       this.markerEls[c.id] = el;
     }
@@ -510,7 +502,7 @@ function esc(s: string): string {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-export default function Globe({ countries, palette, stampStyle, mode, active, onSelect }: GlobeProps) {
+export default function Globe({ countries, palette, mode, active, onSelect }: GlobeProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const markersRef = useRef<HTMLDivElement>(null);
@@ -528,7 +520,6 @@ export default function Globe({ countries, palette, stampStyle, mode, active, on
       markers: markersRef.current,
       tooltip: tooltipRef.current,
       palette,
-      stampStyle,
       mode,
       onSelect: (id) => onSelectRef.current(id),
     });
@@ -552,9 +543,6 @@ export default function Globe({ countries, palette, stampStyle, mode, active, on
   useEffect(() => {
     engineRef.current?.setPalette(palette);
   }, [palette]);
-  useEffect(() => {
-    engineRef.current?.setStampStyle(stampStyle);
-  }, [stampStyle]);
   useEffect(() => {
     engineRef.current?.setMode(mode);
   }, [mode]);
