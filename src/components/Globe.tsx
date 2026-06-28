@@ -27,6 +27,12 @@ interface GlobeProps {
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+// world-atlas country ids are zero-padded ("076"); the catalog uses plain
+// numeric strings ("76"). Normalize both sides so they match.
+function normId(id: unknown): string {
+  return String(Number(id));
+}
+
 function hexA(hex: string, a: number): string {
   const h = hex.replace("#", "");
   const n = parseInt(h.length === 3 ? h.split("").map((x) => x + x).join("") : h, 16);
@@ -103,7 +109,7 @@ class GlobeEngine {
     this.features = fc.features;
     this.featById = {};
     this.features.forEach((f) => {
-      this.featById[String(f.id)] = f;
+      this.featById[normId(f.id)] = f;
     });
     this.graticule = geoGraticule10();
     this.projOrtho = geoOrthographic().rotate([-12, -18, 0]).precision(0.4);
@@ -254,7 +260,7 @@ class GlobeEngine {
     for (const f of this.features) {
       ctx.beginPath();
       path(f);
-      const logged = this.loggedSet.has(String(f.id));
+      const logged = this.loggedSet.has(normId(f.id));
       ctx.fillStyle = logged ? pal.landLogged : pal.land;
       ctx.fill();
       ctx.lineWidth = logged ? 0.7 : 0.35;
