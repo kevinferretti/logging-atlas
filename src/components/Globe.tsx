@@ -187,9 +187,8 @@ class GlobeEngine {
   fitProjection() {
     if (!this.size) return;
     const { w, h } = this.size;
-    const cx = (w + 250) / 2; // shift right to clear the left index rail
-    this.projOrtho.scale(Math.min(w, h) * 0.42).translate([cx, h * 0.54]);
-    if (this.projFlat) this.projFlat.fitExtent([[300, 90], [w - 50, h - 80]], { type: "Sphere" });
+    this.projOrtho.scale(Math.min(w, h) * 0.42).translate([w / 2, h * 0.54]);
+    if (this.projFlat) this.projFlat.fitExtent([[60, 90], [w - 60, h - 80]], { type: "Sphere" });
   }
 
   startLoop() {

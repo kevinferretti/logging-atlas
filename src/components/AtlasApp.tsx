@@ -15,14 +15,18 @@ interface AtlasAppProps {
   initialEntries: Entry[];
 }
 
+type Tab = "globe" | "map" | "index";
+
 export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
   const router = useRouter();
   const [entries, setEntries] = useState<Entry[]>(initialEntries);
   const [view, setView] = useState<"world" | "passport">("world");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [mode, setMode] = useState<GlobeMode>("globe");
+  const [tab, setTab] = useState<Tab>("globe");
   const [paletteName, setPaletteName] = useState<PaletteName>("Sepia Atlas");
   const [logOpen, setLogOpen] = useState(false);
+
+  const globeMode: GlobeMode = tab === "map" ? "map" : "globe";
 
   const palette = useMemo(() => getPalette(paletteName), [paletteName]);
   const countries = useMemo(() => assembleCountries(entries), [entries]);
@@ -91,8 +95,8 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
       <Globe
         countries={countries}
         palette={palette}
-        mode={mode}
-        active={view === "world"}
+        mode={globeMode}
+        active={view === "world" && tab !== "index"}
         onSelect={openCountry}
       />
 
@@ -100,6 +104,27 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 5, display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "22px 30px", pointerEvents: "none" }}>
         <div style={{ pointerEvents: "auto" }}>
           <div style={{ fontFamily: "Marcellus,serif", fontSize: 25, letterSpacing: 7, color: "var(--ink)" }}>ATLAS</div>
+          <button
+            onClick={() => setLogOpen(true)}
+            style={{
+              marginTop: 10,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 7,
+              background: "none",
+              border: "1px dashed var(--sepia)",
+              borderRadius: 2,
+              padding: "7px 13px",
+              cursor: "pointer",
+              fontFamily: "'Special Elite',monospace",
+              fontSize: 10.5,
+              letterSpacing: 1,
+              textTransform: "uppercase",
+              color: "var(--sepia)",
+            }}
+          >
+            ＋ Log an entry
+          </button>
         </div>
         <div style={{ pointerEvents: "auto", display: "flex", gap: 22, alignItems: "flex-start", textAlign: "right" }}>
           <Stat value={countries.length} label="COUNTRIES" />
@@ -123,14 +148,14 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
         </div>
       </div>
 
-      {/* Globe / Map toggle */}
+      {/* Globe / Map / Index toggle */}
       <div style={{ position: "absolute", top: 24, left: "50%", transform: "translateX(-50%)", zIndex: 6, display: "flex", background: "var(--paper2)", border: "1px solid var(--line)", borderRadius: 3, padding: 3, boxShadow: "0 3px 8px rgba(40,28,12,.14)" }}>
-        {(["globe", "map"] as GlobeMode[]).map((m) => {
-          const on = mode === m;
+        {(["globe", "map", "index"] as Tab[]).map((t) => {
+          const on = tab === t;
           return (
             <button
-              key={m}
-              onClick={() => setMode(m)}
+              key={t}
+              onClick={() => setTab(t)}
               style={{
                 border: "none",
                 padding: "7px 16px",
@@ -145,53 +170,58 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
                 transition: "all .15s ease",
               }}
             >
-              {m}
+              {t}
             </button>
           );
         })}
       </div>
 
-      {/* Index rail */}
-      <div style={{ position: "absolute", left: 24, top: 96, bottom: 24, width: 250, zIndex: 5, background: "var(--paper2)", border: "1px solid var(--line)", borderRadius: 4, boxShadow: "0 8px 26px rgba(40,28,12,.16)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <div style={{ padding: "16px 18px 13px", borderBottom: "1px solid var(--line)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ fontFamily: "'Special Elite',monospace", fontSize: 11, letterSpacing: 2.5, color: "var(--sepia)" }}>THE INDEX</div>
-            <button onClick={() => setLogOpen(true)} style={{ ...miniBtn, borderColor: "var(--sepia)", color: "var(--sepia)" }}>
-              ＋ Log
-            </button>
+      {/* Index view (third tab) */}
+      {tab === "index" && (
+        <div style={{ position: "absolute", inset: 0, zIndex: 4, background: "var(--paper)", overflowY: "auto" }}>
+          <div style={{ maxWidth: 640, margin: "0 auto", padding: "104px 24px 64px" }}>
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontFamily: "'Special Elite',monospace", fontSize: 11, letterSpacing: 2.5, color: "var(--sepia)" }}>THE INDEX</div>
+              <div style={{ fontFamily: "'EB Garamond',serif", fontStyle: "italic", fontSize: 15, color: "var(--ink-soft)", marginTop: 3 }}>Your logged world, by volume</div>
+            </div>
+            {ranked.length === 0 ? (
+              <div style={{ padding: "40px 0", textAlign: "center", fontFamily: "'EB Garamond',serif", fontStyle: "italic", fontSize: 16, color: "var(--ink-soft)" }}>
+                Your atlas is empty. Press <strong>＋ Log an entry</strong> to stamp your first one.
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {ranked.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => openCountry(c.id)}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--panel)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+                    style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", background: "none", border: "none", borderRadius: 4, padding: "10px 12px", cursor: "pointer", transition: "background .15s" }}
+                  >
+                    <div style={{ flex: "0 0 auto", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center" }} dangerouslySetInnerHTML={{ __html: buildCountDisc(c, { size: 44, palette }) }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
+                        <div style={{ fontFamily: "Marcellus,serif", fontSize: 19, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.name}</div>
+                        <div style={{ fontFamily: "'Special Elite',monospace", fontSize: 10.5, letterSpacing: 1, color: "var(--ink-soft)", flex: "0 0 auto" }}>{c.region.toUpperCase()}</div>
+                      </div>
+                      <div style={{ height: 5, background: "var(--line)", borderRadius: 3, marginTop: 8, overflow: "hidden" }}>
+                        <div style={{ width: `${Math.round((c.entries.length / maxEntries) * 100)}%`, height: "100%", background: "var(--sepia)", borderRadius: 3 }} />
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-        <div style={{ flex: 1, overflowY: "auto", padding: 7 }}>
-          {ranked.length === 0 ? (
-            <div style={{ padding: "26px 14px", textAlign: "center", fontFamily: "'EB Garamond',serif", fontStyle: "italic", fontSize: 14, color: "var(--ink-soft)" }}>
-              Your atlas is empty. Press <strong>＋ Log</strong> to stamp your first entry.
-            </div>
-          ) : (
-            ranked.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => openCountry(c.id)}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--panel)")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
-                style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", textAlign: "left", background: "none", border: "none", borderRadius: 3, padding: "8px 9px", cursor: "pointer", transition: "background .15s" }}
-              >
-                <div style={{ flex: "0 0 auto", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center" }} dangerouslySetInnerHTML={{ __html: buildCountDisc(c, { size: 36, palette }) }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: "Marcellus,serif", fontSize: 15, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.name}</div>
-                  <div style={{ height: 4, background: "var(--line)", borderRadius: 2, marginTop: 6, overflow: "hidden" }}>
-                    <div style={{ width: `${Math.round((c.entries.length / maxEntries) * 100)}%`, height: "100%", background: "var(--sepia)", borderRadius: 2 }} />
-                  </div>
-                </div>
-              </button>
-            ))
-          )}
-        </div>
-      </div>
+      )}
 
-      {/* Hint */}
-      <div style={{ position: "absolute", bottom: 22, left: "50%", transform: "translate(-50%,0)", zIndex: 5, fontFamily: "'Special Elite',monospace", fontSize: 10, letterSpacing: 1.6, color: "var(--ink-soft)", opacity: 0.72, pointerEvents: "none", whiteSpace: "nowrap" }}>
-        DRAG TO SPIN&nbsp;&nbsp;·&nbsp;&nbsp;SCROLL TO ZOOM&nbsp;&nbsp;·&nbsp;&nbsp;CLICK A COUNTRY TO OPEN ITS PASSPORT
-      </div>
+      {/* Hint (globe/map only) */}
+      {tab !== "index" && (
+        <div style={{ position: "absolute", bottom: 22, left: "50%", transform: "translate(-50%,0)", zIndex: 5, fontFamily: "'Special Elite',monospace", fontSize: 10, letterSpacing: 1.6, color: "var(--ink-soft)", opacity: 0.72, pointerEvents: "none", whiteSpace: "nowrap" }}>
+          DRAG TO SPIN&nbsp;&nbsp;·&nbsp;&nbsp;SCROLL TO ZOOM&nbsp;&nbsp;·&nbsp;&nbsp;CLICK A COUNTRY TO OPEN ITS PASSPORT
+        </div>
+      )}
 
       {/* PASSPORT OVERLAY */}
       {view === "passport" && selected && (
