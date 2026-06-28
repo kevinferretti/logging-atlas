@@ -7,7 +7,7 @@ import { fmtCoord, subLine } from "@/lib/logbook";
 import { countCats } from "@/lib/stamps";
 import { layoutCluster } from "@/lib/inkstamps";
 import InkFilters from "./InkFilters";
-import type { Palette } from "@/lib/palettes";
+import { isDarkPalette, type Palette } from "@/lib/palettes";
 import type { CategoryKey, Entry, LoggedCountry } from "@/lib/types";
 
 export interface NewEntryInput {
@@ -44,8 +44,9 @@ export default function Passport({ country, palette, onBack, onAdd, onDelete }: 
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const dark = isDarkPalette(palette);
   const counts = useMemo(() => countCats(country), [country]);
-  const cluster = useMemo(() => layoutCluster(country.entries, country.name), [country]);
+  const cluster = useMemo(() => layoutCluster(country.entries, country.name, dark), [country, dark]);
   const HERO_W = 380;
   const heroScale = Math.min(1, HERO_W / cluster.width);
 
@@ -135,8 +136,6 @@ export default function Passport({ country, palette, onBack, onAdd, onDelete }: 
                 position: "relative",
                 width: cluster.width * heroScale,
                 height: cluster.height * heroScale,
-                background:
-                  "radial-gradient(ellipse 80% 84% at 50% 48%, #F3EAD6 0%, #F3EAD6 54%, rgba(243,234,214,0) 100%)",
                 overflow: "hidden",
               }}
             >
@@ -144,7 +143,7 @@ export default function Passport({ country, palette, onBack, onAdd, onDelete }: 
                 {cluster.stamps.map((s) => (
                   <div
                     key={s.key}
-                    style={{ position: "absolute", width: s.size, height: s.size, left: s.left, top: s.top, transform: `rotate(${s.rot}deg)`, mixBlendMode: "multiply", zIndex: s.z }}
+                    style={{ position: "absolute", width: s.size, height: s.size, left: s.left, top: s.top, transform: `rotate(${s.rot}deg)`, mixBlendMode: dark ? "screen" : "multiply", zIndex: s.z }}
                     dangerouslySetInnerHTML={{ __html: s.svg }}
                   />
                 ))}

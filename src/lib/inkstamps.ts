@@ -5,12 +5,21 @@
 
 import type { CategoryKey, Entry } from "./types";
 
+// Dark inks for light paper (multiply blend).
 const INK2: Record<CategoryKey, string> = {
   recipe: "#A23A2E",
   book: "#2C4F8A",
   movie: "#3A3733",
   music: "#2E6B4F",
   place: "#6B3A77",
+};
+// Light inks for dark paper (screen blend) — luminous versions of each colour.
+const INK_DARK: Record<CategoryKey, string> = {
+  recipe: "#E8A292",
+  book: "#9CBDEC",
+  movie: "#CBC4B6",
+  music: "#92CCAE",
+  place: "#CDA2D6",
 };
 const CATL: Record<CategoryKey, string> = {
   recipe: "RECIPE",
@@ -193,10 +202,10 @@ function sHex(o: ShapeOpts): string {
 }
 
 /** Build one worn-ink stamp SVG for an entry. `i` seeds its randomised look. */
-export function buildEntryStamp(entry: Entry, countryName: string, size: number, i: number): string {
+export function buildEntryStamp(entry: Entry, countryName: string, size: number, i: number, dark = false): string {
   const seed = i * 53 + 11;
   const rnd = (k: number) => rseed(seed, k);
-  const ink = INK2[entry.category] || "#3A3733";
+  const ink = (dark ? INK_DARK : INK2)[entry.category] || (dark ? "#CBC4B6" : "#3A3733");
   const cat = CATL[entry.category] || "ENTRY";
   const o: ShapeOpts = {
     ink,
@@ -233,7 +242,7 @@ export interface PlacedStamp {
   svg: string;
 }
 
-export function layoutCluster(entries: Entry[], countryName: string): { width: number; height: number; stamps: PlacedStamp[] } {
+export function layoutCluster(entries: Entry[], countryName: string, dark = false): { width: number; height: number; stamps: PlacedStamp[] } {
   const n = entries.length;
   const D = 160;
   const gx = 118;
@@ -266,7 +275,7 @@ export function layoutCluster(entries: Entry[], countryName: string): { width: n
       size: Di,
       rot,
       z: 10 + Math.floor(rnd(4) * 30),
-      svg: buildEntryStamp(e, countryName, Di, i),
+      svg: buildEntryStamp(e, countryName, Di, i, dark),
     });
   });
   return { width: W, height: H, stamps };

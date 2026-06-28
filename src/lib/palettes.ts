@@ -46,6 +46,15 @@ export function coercePaletteName(value: string | null | undefined): PaletteName
   return value && value in PALETTES ? (value as PaletteName) : "Sepia Atlas";
 }
 
+/** True when the palette uses dark paper (so ink stamps need light inks + screen blend). */
+export function isDarkPalette(p: Palette): boolean {
+  const hex = p.paper.replace("#", "");
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
+}
+
 /** Map a palette onto the CSS custom properties the UI reads. */
 export function paletteCssVars(p: Palette): Record<string, string> {
   return {
