@@ -65,6 +65,18 @@ select {
     transform: none;
   }
 }
+/* Passport-book stamp settle ("thunk") — preserves each stamp's rotation. */
+@keyframes om-settle {
+  0% {
+    transform: translateY(-7px) scale(1.14) rotate(var(--r, 0deg));
+  }
+  58% {
+    transform: translateY(0) scale(0.97) rotate(var(--r, 0deg));
+  }
+  100% {
+    transform: scale(1) rotate(var(--r, 0deg));
+  }
+}
 
 ::-webkit-scrollbar {
   width: 10px;

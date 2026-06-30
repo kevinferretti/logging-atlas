@@ -31,3 +31,11 @@ export interface SessionUser {
   name: string | null;
   theme: string;
 }
+
+/** Payload for logging a new entry (shared by the log modal and book). */
+export interface NewEntryInput {
+  countryId: string;
+  category: CategoryKey;
+  title: string;
+  link: string;
+}

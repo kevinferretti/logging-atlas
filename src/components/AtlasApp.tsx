@@ -3,12 +3,12 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Globe, { type GlobeMode } from "./Globe";
-import Passport, { type NewEntryInput } from "./Passport";
+import PassportBook from "./PassportBook";
 import LogModal from "./LogModal";
 import { assembleCountries } from "@/lib/logbook";
 import { buildCountDisc } from "@/lib/stamps";
-import { coercePaletteName, getPalette, paletteCssVars, type PaletteName } from "@/lib/palettes";
-import type { Entry, SessionUser } from "@/lib/types";
+import { coercePaletteName, getPalette, isDarkPalette, paletteCssVars, type PaletteName } from "@/lib/palettes";
+import type { Entry, NewEntryInput, SessionUser } from "@/lib/types";
 
 interface AtlasAppProps {
   user: SessionUser;
@@ -32,7 +32,6 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
   const countries = useMemo(() => assembleCountries(entries), [entries]);
   const ranked = useMemo(() => [...countries].sort((a, b) => b.entries.length - a.entries.length), [countries]);
   const maxEntries = ranked.length ? ranked[0].entries.length : 1;
-  const selected = countries.find((c) => c.id === selectedId) ?? null;
   const totalEntries = entries.length;
 
   function openCountry(id: string) {
@@ -242,15 +241,14 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
         </div>
       )}
 
-      {/* PASSPORT OVERLAY */}
-      {view === "passport" && selected && (
-        <Passport
-          country={selected}
-          palette={palette}
-          onBack={goWorld}
-          onAdd={async (input, file) => {
-            await addEntry(input, file);
-          }}
+      {/* PASSPORT BOOK OVERLAY */}
+      {view === "passport" && selectedId && (
+        <PassportBook
+          user={user}
+          countries={countries}
+          dark={isDarkPalette(palette)}
+          initialCountryId={selectedId}
+          onClose={goWorld}
           onDelete={deleteEntry}
         />
       )}

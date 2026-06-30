@@ -4,8 +4,7 @@ import { useState } from "react";
 import type { CSSProperties } from "react";
 import { CATEGORIES } from "@/lib/categories";
 import { COUNTRY_CATALOG_SORTED } from "@/lib/countries";
-import type { NewEntryInput } from "./Passport";
-import type { CategoryKey } from "@/lib/types";
+import type { CategoryKey, NewEntryInput } from "@/lib/types";
 
 interface LogModalProps {
   onClose: () => void;
