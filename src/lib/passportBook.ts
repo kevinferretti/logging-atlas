@@ -101,6 +101,7 @@ export class PassportBook {
 
   turn = 0;
   animating = false;
+  _dragging = false;
   _built = false;
   _ctx: TurnCtx | null = null;
   _p = 0;
@@ -614,8 +615,8 @@ export class PassportBook {
       '<div class="om-page om-right" style="position:absolute;left:' + PW + "px;top:0;width:" + PW + "px;height:" + PH + 'px;border-radius:2px 4px 4px 2px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.18);backface-visibility:hidden;"></div>' +
       '<div class="om-spine" style="position:absolute;left:' + (PW - 9) + "px;top:0;width:18px;height:" + PH + 'px;z-index:8;pointer-events:none;background:linear-gradient(90deg,rgba(40,26,10,.15),rgba(40,26,10,.04) 34%,rgba(255,250,235,.10) 50%,rgba(40,26,10,.04) 66%,rgba(40,26,10,.15));"><div style="position:absolute;left:50%;top:12px;bottom:12px;width:0;border-left:1px dashed rgba(70,50,25,.45);"></div></div>' +
       '<div class="om-leaf" style="position:absolute;top:0;width:' + PW + "px;height:" + PH + 'px;transform-style:preserve-3d;z-index:30;display:none;will-change:transform;">' +
-      '<div class="om-face om-front" style="position:absolute;inset:0;overflow:hidden;backface-visibility:hidden;border-radius:2px 4px 4px 2px;box-shadow:0 2px 10px rgba(0,0,0,.2);"></div>' +
-      '<div class="om-face om-back" style="position:absolute;inset:0;overflow:hidden;backface-visibility:hidden;border-radius:4px 2px 2px 4px;transform:rotateY(180deg);box-shadow:0 2px 10px rgba(0,0,0,.2);"></div>' +
+      '<div class="om-face om-front" style="position:absolute;inset:0;overflow:hidden;isolation:isolate;backface-visibility:hidden;border-radius:2px 4px 4px 2px;box-shadow:0 2px 10px rgba(0,0,0,.2);"></div>' +
+      '<div class="om-face om-back" style="position:absolute;inset:0;overflow:hidden;isolation:isolate;backface-visibility:hidden;border-radius:4px 2px 2px 4px;transform:rotateY(180deg);box-shadow:0 2px 10px rgba(0,0,0,.2);"></div>' +
       '<div class="om-curl" style="position:absolute;inset:0;pointer-events:none;border-radius:2px;opacity:0;"></div>' +
       "</div>" +
       "</div>";
@@ -732,11 +733,13 @@ export class PassportBook {
       if (!pg) return;
       pg.querySelectorAll<HTMLElement>(".om-stamp").forEach((s) => {
         s.onmouseenter = () => {
+          if (self._dragging || self.animating) return;
           self._lift(s.getAttribute("data-sid")!, true);
           tip.textContent = s.getAttribute("data-cap");
           tip.style.opacity = "1";
         };
         s.onmousemove = (e) => {
+          if (self._dragging || self.animating) return;
           const r = root.getBoundingClientRect();
           tip.style.left = e.clientX - r.left + "px";
           tip.style.top = e.clientY - r.top - 14 + "px";
@@ -835,7 +838,6 @@ export class PassportBook {
     this.backEl.style.background = ctx.backBg || "#F3EAD6";
     this.frontEl.style.visibility = "visible";
     this.backEl.style.visibility = "visible";
-    [this.frontEl, this.backEl].forEach((f) => f.querySelectorAll<HTMLElement>(".om-stamp").forEach((s) => (s.style.mixBlendMode = "normal")));
     if (ctx.reveal) {
       ctx.reveal.el.style.display = "block";
       ctx.reveal.el.innerHTML = this.pageRoleHTML(ctx.reveal.role);
@@ -940,7 +942,9 @@ export class PassportBook {
       this.backEl.style.visibility = "visible";
       this.leafEl.removeEventListener("transitionend", onEnd);
       if (commit) {
-        this.setRest(ctx.toTurn, true);
+        // No settle replay here — the landing pages must match the leaf's
+        // back face exactly so the end of the turn is seamless.
+        this.setRest(ctx.toTurn);
         if (this.opts.sound) this.playFlip();
       } else {
         this.setRest(ctx.fromTurn);
@@ -1067,6 +1071,8 @@ export class PassportBook {
           return;
         }
         dragging = true;
+        self._dragging = true;
+        self.els.tip.style.opacity = "0";
         try {
           wrap.setPointerCapture(e.pointerId);
         } catch {
@@ -1084,6 +1090,7 @@ export class PassportBook {
       const wasDragging = dragging;
       grabbed = false;
       dragging = false;
+      self._dragging = false;
       if (wasDragging) {
         self.endTurn((self._p || 0) > 0.4);
       } else if (!self.animating) {
@@ -1100,6 +1107,7 @@ export class PassportBook {
     };
     wrap.addEventListener("pointerup", finish);
     wrap.addEventListener("pointercancel", () => {
+      self._dragging = false;
       if (dragging) {
         grabbed = false;
         dragging = false;
