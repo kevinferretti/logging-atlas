@@ -21,6 +21,19 @@ const INK_DARK: Record<CategoryKey, string> = {
   music: "#92CCAE",
   place: "#CDA2D6",
 };
+
+// The passport-book page colour. Stamps render with normal compositing (no
+// mix-blend-mode — blended layers glitch in GPU compositors), so the multiply
+// against the paper is baked into the ink colour instead.
+const PAPER: [number, number, number] = [243, 234, 214];
+
+function bakeInk(hex: string): string {
+  const to2 = (n: number) => Math.round(n).toString(16).padStart(2, "0");
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return "#" + to2((r * PAPER[0]) / 255) + to2((g * PAPER[1]) / 255) + to2((b * PAPER[2]) / 255);
+}
 const CATL: Record<CategoryKey, string> = {
   recipe: "RECIPE",
   book: "BOOK",
@@ -205,7 +218,8 @@ function sHex(o: ShapeOpts): string {
 export function buildEntryStamp(entry: Entry, countryName: string, size: number, i: number, dark = false): string {
   const seed = i * 53 + 11;
   const rnd = (k: number) => rseed(seed, k);
-  const ink = (dark ? INK_DARK : INK2)[entry.category] || (dark ? "#CBC4B6" : "#3A3733");
+  const rawInk = (dark ? INK_DARK : INK2)[entry.category] || (dark ? "#CBC4B6" : "#3A3733");
+  const ink = dark ? rawInk : bakeInk(rawInk);
   const cat = CATL[entry.category] || "ENTRY";
   const o: ShapeOpts = {
     ink,
@@ -225,9 +239,13 @@ export function buildEntryStamp(entry: Entry, countryName: string, size: number,
   else inner = sHex(o);
   const fid = "ink" + Math.floor(rnd(6) * 5);
   const op = (0.82 + rnd(10) * 0.15).toFixed(2);
+  // 8 units of padding keep the displaced ink strokes inside the SVG box, so
+  // a composited stamp layer never clips them at its edges. The artwork still
+  // renders at `size` px for the 100-unit design (box is size*1.16).
+  const box = Math.round(size * 1.16);
   return (
-    '<svg viewBox="0 0 100 100" width="' + size + '" height="' + size +
-    '" style="overflow:visible;display:block;"><g filter="url(#' + fid + ')" opacity="' + op + '">' + inner + "</g></svg>"
+    '<svg viewBox="-8 -8 116 116" width="' + box + '" height="' + box +
+    '" style="display:block;"><g filter="url(#' + fid + ')" opacity="' + op + '">' + inner + "</g></svg>"
   );
 }
 
