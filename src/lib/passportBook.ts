@@ -316,11 +316,17 @@ export class PassportBook {
     const items = this.layout(ci);
     let h = "";
     items.forEach((it) => {
+      // will-change:transform keeps each stamp on its own composited layer so
+      // the expensive turbulence-filtered SVG rasterizes once; the hover lift
+      // is then pure compositor work (no mid-hover re-raster tile seams).
+      // The shadow is an opacity-faded underlay child, not a CSS filter.
       h +=
         '<div class="om-stamp" data-sid="' + it.sid + '" data-eid="' + esc(it.entry.id) + '" data-cap="' + esc(it.cap) +
         '" style="position:absolute;left:' + (it.x + offset - it.d / 2).toFixed(1) + "px;top:" + (it.y - it.d / 2).toFixed(1) +
         "px;width:" + it.d + "px;height:" + it.d + "px;--r:" + it.rot.toFixed(1) + "deg;transform:rotate(" + it.rot.toFixed(1) +
-        'deg);mix-blend-mode:multiply;z-index:' + it.z + ';cursor:pointer;transition:transform .16s ease,filter .16s ease;">' + it.svg + "</div>";
+        'deg);mix-blend-mode:multiply;z-index:' + it.z + ';cursor:pointer;will-change:transform;transition:transform .16s ease;">' +
+        '<div class="om-stamp-sh" style="position:absolute;left:4%;right:4%;top:58%;bottom:-8%;background:radial-gradient(ellipse at 50% 50%,rgba(40,20,5,.30),rgba(40,20,5,0) 68%);opacity:0;will-change:opacity;transition:opacity .16s ease;pointer-events:none;"></div>' +
+        it.svg + "</div>";
     });
     return h;
   }
@@ -757,14 +763,15 @@ export class PassportBook {
     const nodes = this.els.book.querySelectorAll<HTMLElement>('.om-stamp[data-sid="' + sid + '"]');
     nodes.forEach((n) => {
       const r = n.style.getPropertyValue("--r") || "0deg";
+      const sh = n.querySelector<HTMLElement>(".om-stamp-sh");
       if (on) {
         n.style.transform = "translateY(-7px) scale(1.06) rotate(" + r + ")";
         n.style.zIndex = "400";
-        n.style.filter = "drop-shadow(0 8px 10px rgba(40,20,5,.4))";
+        if (sh) sh.style.opacity = "1";
       } else {
         n.style.transform = "rotate(" + r + ")";
         n.style.zIndex = "";
-        n.style.filter = "";
+        if (sh) sh.style.opacity = "0";
       }
     });
   }
