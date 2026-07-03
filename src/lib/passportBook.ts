@@ -1094,6 +1094,7 @@ export class PassportBook {
         dragging = true;
         self._dragging = true;
         self.els.tip.style.opacity = "0";
+        window.getSelection()?.removeAllRanges();
         try {
           wrap.setPointerCapture(e.pointerId);
         } catch {

@@ -141,6 +141,10 @@ export default function PassportBook({ user, countries, dark, initialCountryId, 
         fontFamily: "'EB Garamond',Georgia,serif",
         background: "#cdbf9f",
         animation: "om-rise .3s ease",
+        // Drag-to-flip must never start a native text selection (Firefox
+        // paints selection boxes over the page text during the turn).
+        userSelect: "none",
+        WebkitUserSelect: "none",
       }}
     >
       <InkFilters />
