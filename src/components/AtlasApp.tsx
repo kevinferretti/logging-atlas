@@ -241,6 +241,16 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
         </div>
       )}
 
+      {/* Source code */}
+      <a
+        href="https://github.com/kevinferretti/logging-atlas"
+        target="_blank"
+        rel="noreferrer noopener"
+        style={{ position: "absolute", bottom: 22, right: 30, zIndex: 5, fontFamily: "'Special Elite',monospace", fontSize: 10, letterSpacing: 1.6, color: "var(--ink-soft)", opacity: 0.72, textDecoration: "none" }}
+      >
+        SOURCE&nbsp;↗
+      </a>
+
       {/* PASSPORT BOOK OVERLAY */}
       {view === "passport" && selectedId && (
         <PassportBook

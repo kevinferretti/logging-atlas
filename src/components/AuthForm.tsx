@@ -104,6 +104,17 @@ export default function AuthForm() {
             Use the demo account
           </button>
         </div>
+
+        <div style={{ textAlign: "center", marginTop: 14 }}>
+          <a
+            href="https://github.com/kevinferretti/logging-atlas"
+            target="_blank"
+            rel="noreferrer noopener"
+            style={{ fontFamily: "'Special Elite',monospace", fontSize: 10, letterSpacing: 1.6, color: "var(--ink-soft)", opacity: 0.75, textDecoration: "none" }}
+          >
+            SOURCE&nbsp;↗
+          </a>
+        </div>
       </div>
     </div>
   );
