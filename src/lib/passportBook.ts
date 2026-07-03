@@ -319,19 +319,19 @@ export class PassportBook {
     const items = this.layout(ci);
     let h = "";
     items.forEach((it) => {
-      // will-change:transform keeps each stamp on its own composited layer so
-      // the expensive turbulence-filtered SVG rasterizes once; the hover lift
-      // is then pure compositor work (no mid-hover re-raster tile seams).
-      // No mix-blend-mode — the multiply against the paper is baked into the
-      // ink colours (blended compositor layers glitch on some GPUs). The box
-      // is d*1.16 to match the padded SVG; the artwork still renders at d.
+      // No will-change here: pre-promoted stamp surfaces inside the 3D-rotating
+      // leaf get mis-projected by Firefox's compositor (chopped tiles/seams
+      // during turns). Hover transitions still promote transiently, which is
+      // enough. No mix-blend-mode — the multiply against the paper is baked
+      // into the ink colours (blended compositor layers glitch on some GPUs).
+      // The box is d*1.16 to match the padded SVG; the artwork renders at d.
       const bd = it.d * 1.16;
       h +=
         '<div class="om-stamp" data-sid="' + it.sid + '" data-eid="' + esc(it.entry.id) + '" data-cap="' + esc(it.cap) +
         '" style="position:absolute;left:' + (it.x + offset - bd / 2).toFixed(1) + "px;top:" + (it.y - bd / 2).toFixed(1) +
         "px;width:" + bd.toFixed(0) + "px;height:" + bd.toFixed(0) + "px;--r:" + it.rot.toFixed(1) + "deg;transform:rotate(" + it.rot.toFixed(1) +
-        "deg);z-index:" + it.z + ';cursor:pointer;will-change:transform;transition:transform .16s ease;">' +
-        '<div class="om-stamp-sh" style="position:absolute;left:10%;right:10%;top:56%;bottom:0;background:radial-gradient(ellipse at 50% 50%,rgba(40,20,5,.30),rgba(40,20,5,0) 68%);opacity:0;will-change:opacity;transition:opacity .16s ease;pointer-events:none;"></div>' +
+        "deg);z-index:" + it.z + ';cursor:pointer;transition:transform .16s ease;">' +
+        '<div class="om-stamp-sh" style="position:absolute;left:10%;right:10%;top:56%;bottom:0;background:radial-gradient(ellipse at 50% 50%,rgba(40,20,5,.30),rgba(40,20,5,0) 68%);opacity:0;transition:opacity .16s ease;pointer-events:none;"></div>' +
         it.svg + "</div>";
     });
     return h;
