@@ -203,7 +203,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
             </div>
             {ranked.length === 0 ? (
               <div style={{ padding: "40px 0", textAlign: "center", fontFamily: "'EB Garamond',serif", fontStyle: "italic", fontSize: 16, color: "var(--ink-soft)" }}>
-                Your atlas is empty. Press <strong>＋ Log an entry</strong> to stamp your first one.
+                Your atlas is empty
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
