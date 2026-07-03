@@ -39,12 +39,6 @@ export default function AuthForm() {
     }
   }
 
-  function useDemo() {
-    setMode("login");
-    setEmail("demo@atlas.app");
-    setPassword("password");
-  }
-
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, background: "var(--paper)" }}>
       <div style={{ width: "100%", maxWidth: 420 }}>
@@ -98,14 +92,7 @@ export default function AuthForm() {
           </form>
         </div>
 
-        <div style={{ textAlign: "center", marginTop: 18, fontFamily: "'EB Garamond',serif", fontStyle: "italic", fontSize: 14, color: "var(--ink-soft)" }}>
-          Just exploring?{" "}
-          <button onClick={useDemo} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "var(--sepia)", fontFamily: "'EB Garamond',serif", fontStyle: "italic", fontSize: 14, textDecoration: "underline" }}>
-            Use the demo account
-          </button>
-        </div>
-
-        <div style={{ textAlign: "center", marginTop: 14 }}>
+        <div style={{ textAlign: "center", marginTop: 18 }}>
           <a
             href="https://github.com/kevinferretti/logging-atlas"
             target="_blank"
