@@ -201,10 +201,13 @@ export class PassportBook {
     return v - Math.floor(v);
   }
   GRAIN(op: number): string {
+    // Black-alpha noise composited normally. A multiply blend here produces
+    // black seams on GPU compositors while the leaf animates in 3D — the same
+    // bug that hit the stamps, so the darkening is baked into the texture.
     return (
-      "background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\");background-size:150px;opacity:" +
+      "background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.35 0.35 0.35 0 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\");background-size:150px;opacity:" +
       op +
-      ";mix-blend-mode:multiply;"
+      ";"
     );
   }
 
