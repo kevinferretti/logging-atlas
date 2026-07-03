@@ -869,8 +869,14 @@ export class PassportBook {
       this.rightEl.style.display = "none";
       this.spineEl.style.display = "none";
       this.slvL.style.display = "block";
-    } else if (ctx.mode === "close" || ctx.mode === "closefront") {
+    } else if (ctx.mode === "close") {
+      // The leaf carries the last page + back cover; beneath it is the desk,
+      // not a stale copy of the page being turned.
       this.spineEl.style.display = "block";
+      this.rightEl.style.display = "none";
+    } else if (ctx.mode === "closefront") {
+      this.spineEl.style.display = "block";
+      this.leftEl.style.display = "none";
     }
     this.attachStamps();
     this.setProgress(0);
