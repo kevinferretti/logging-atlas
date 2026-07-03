@@ -200,7 +200,6 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
           <div style={{ maxWidth: 640, margin: "0 auto", padding: "104px 24px 64px" }}>
             <div style={{ marginBottom: 18 }}>
               <div style={{ fontFamily: "'Special Elite',monospace", fontSize: 11, letterSpacing: 2.5, color: "var(--sepia)" }}>THE INDEX</div>
-              <div style={{ fontFamily: "'EB Garamond',serif", fontStyle: "italic", fontSize: 15, color: "var(--ink-soft)", marginTop: 3 }}>Your logged world, by volume</div>
             </div>
             {ranked.length === 0 ? (
               <div style={{ padding: "40px 0", textAlign: "center", fontFamily: "'EB Garamond',serif", fontStyle: "italic", fontSize: 16, color: "var(--ink-soft)" }}>
