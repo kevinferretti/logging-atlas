@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import { isCategoryKey } from "@/lib/categories";
-import { catalogCountry } from "@/lib/countries";
+import { catalogCountry, resolveCountryId } from "@/lib/countries";
 import { MAX_UPLOAD_BYTES, normalizeLink, saveUpload } from "@/lib/uploads";
 import type { CategoryKey, Entry } from "@/lib/types";
 
@@ -64,7 +64,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const countryId = String(form.get("countryId") ?? "");
+  // Normalize legacy ids at write time so the database only accumulates
+  // current catalog ids.
+  const countryId = resolveCountryId(String(form.get("countryId") ?? ""));
   const category = String(form.get("category") ?? "");
   const title = String(form.get("title") ?? "").trim();
   const link = normalizeLink(String(form.get("link") ?? ""));

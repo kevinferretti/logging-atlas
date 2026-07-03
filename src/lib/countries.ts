@@ -25,6 +25,29 @@ export function catalogCountry(id: string): CatalogCountry | undefined {
   return byId.get(id);
 }
 
+// Retired ids → successor ids. When a future world-atlas bump removes an id
+// users may have logged under — a country dissolving into a successor, or a
+// synthetic id gaining a real ISO code (e.g. "kosovo" → its assigned numeric
+// id) — map the old id to the new one here. Stored entries are resolved
+// through this map when read, and new writes are normalized, so old entries
+// follow the successor country instead of going dark. Empty today: no id in
+// the pinned dataset has been retired.
+const LEGACY_COUNTRY_IDS: Record<string, string> = {};
+
+/** Follow legacy-id migrations to the id's current catalog form. */
+export function resolveCountryId(id: string): string {
+  let cur = id;
+  for (let hops = 0; hops < 8 && LEGACY_COUNTRY_IDS[cur]; hops++) cur = LEGACY_COUNTRY_IDS[cur];
+  return cur;
+}
+
+// A migration must map a retired id onto a live catalog entry. Catch typos,
+// dead-end chains, and cycles as soon as the module loads.
+for (const legacy of Object.keys(LEGACY_COUNTRY_IDS)) {
+  if (byId.has(legacy)) throw new Error('Legacy country id "' + legacy + '" is still in the catalog');
+  if (!byId.has(resolveCountryId(legacy))) throw new Error('Legacy country id "' + legacy + '" does not resolve to a catalog country');
+}
+
 // Official long-form names shown above the country in the stamped logbook.
 // Anything not listed falls back to an empty string (the book shows a generic
 // "DESTINATION" line instead).

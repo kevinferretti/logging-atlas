@@ -213,7 +213,11 @@ for (const f of fc.features) {
 // Catch stale REGIONS/NAMES keys after a dataset change.
 const ids = new Set(entries.map((e) => e.id));
 for (const key of [...Object.keys(REGIONS), ...Object.keys(NAMES)]) {
-  if (!ids.has(key)) throw new Error("REGIONS/NAMES key " + key + " matches no feature in countries-110m");
+  if (!ids.has(key))
+    throw new Error(
+      "REGIONS/NAMES key " + key + " matches no feature in countries-110m. If the id was retired " +
+        "and users may have logged entries under it, add a migration to LEGACY_COUNTRY_IDS in src/lib/countries.ts.",
+    );
 }
 
 entries.sort((a, b) => a.name.localeCompare(b.name, "en"));

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Globe, { type GlobeMode } from "./Globe";
 import PassportBook from "./PassportBook";
 import LogModal from "./LogModal";
+import { resolveCountryId } from "@/lib/countries";
 import { assembleCountries } from "@/lib/logbook";
 import { buildCountDisc } from "@/lib/stamps";
 import { coercePaletteName, getPalette, isDarkPalette, paletteCssVars, type PaletteName } from "@/lib/palettes";
@@ -64,8 +65,9 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
     if (!res.ok) return;
     setEntries((prev) => {
       const next = prev.filter((e) => e.id !== entryId);
-      // If we just removed the last entry for the open country, return to the world.
-      if (selectedId && !next.some((e) => e.countryId === selectedId)) {
+      // If we just removed the last entry for the open country, return to the
+      // world. Stored ids may be legacy ones — compare in resolved form.
+      if (selectedId && !next.some((e) => resolveCountryId(e.countryId) === selectedId)) {
         setView("world");
         setSelectedId(null);
       }

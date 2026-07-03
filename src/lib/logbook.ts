@@ -1,13 +1,15 @@
-import { catalogCountry } from "./countries";
+import { catalogCountry, resolveCountryId } from "./countries";
 import type { Entry, LoggedCountry } from "./types";
 
 /** Group flat entries into per-country logbook records, resolving catalog data. */
 export function assembleCountries(entries: Entry[]): LoggedCountry[] {
   const byCountry = new Map<string, Entry[]>();
   for (const e of entries) {
-    const list = byCountry.get(e.countryId);
+    // Entries logged under a since-retired id group with the successor country.
+    const id = resolveCountryId(e.countryId);
+    const list = byCountry.get(id);
     if (list) list.push(e);
-    else byCountry.set(e.countryId, [e]);
+    else byCountry.set(id, [e]);
   }
 
   const result: LoggedCountry[] = [];
