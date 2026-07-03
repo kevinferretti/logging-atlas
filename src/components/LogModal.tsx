@@ -51,7 +51,7 @@ export default function LogModal({ onClose, onSave }: LogModalProps) {
           <select value={countryId} onChange={(e) => setCountryId(e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
             {COUNTRY_CATALOG_SORTED.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.name} — {c.region}
+                {c.name}
               </option>
             ))}
           </select>
@@ -75,7 +75,7 @@ export default function LogModal({ onClose, onSave }: LogModalProps) {
           })}
         </div>
 
-        <input value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save()} placeholder="What did you log?" style={inputStyle} autoFocus />
+        <input value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save()} placeholder="Name" style={inputStyle} autoFocus />
         <input value={link} onChange={(e) => setLink(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save()} placeholder="Link (optional)" style={inputStyle} />
         {category === "recipe" && (
           <label style={labelStyle}>
@@ -92,7 +92,7 @@ export default function LogModal({ onClose, onSave }: LogModalProps) {
             disabled={saving || !title.trim()}
             style={{ background: "var(--sepia)", color: "var(--paper)", border: "none", borderRadius: 2, padding: "11px 20px", cursor: saving || !title.trim() ? "default" : "pointer", opacity: saving || !title.trim() ? 0.6 : 1, fontFamily: "'Special Elite',monospace", fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase", boxShadow: "0 2px 5px rgba(40,28,12,.25)" }}
           >
-            {saving ? "Stamping…" : "Press the stamp"}
+            {saving ? "Stamping…" : "Add"}
           </button>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Special Elite',monospace", fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase", color: "var(--ink-soft)" }}>
             Cancel
