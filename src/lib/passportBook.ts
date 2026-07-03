@@ -579,11 +579,14 @@ export class PassportBook {
     const guilloche = '<div style="position:absolute;inset:0;pointer-events:none;opacity:.5;background:repeating-radial-gradient(circle at ' + (side === "L" ? "100%" : "0%") + ' 50%,transparent 0 16px,rgba(160,130,80,.08) 16px 17px);"></div>';
     let head = "";
     if (side === "L") {
+      // 52px Marcellus fits ~14 characters in the header column; shrink longer
+      // names ("Bosnia and Herzegovina") so they stay on one line.
+      const nameFs = co.name.length > 14 ? Math.max(30, Math.floor((52 * 14) / co.name.length)) : 52;
       head =
         '<div style="position:absolute;left:30px;right:24px;top:26px;z-index:200;">' +
         '<div style="display:inline-block;background:linear-gradient(rgba(243,234,214,.86),rgba(243,234,214,.5));padding:2px 8px 4px 0;border-radius:2px;">' +
         '<div style="font-family:\'Special Elite\',monospace;font-size:9px;letter-spacing:3px;color:' + sep + ';text-transform:uppercase;">' + esc(co.prefix) + "</div>" +
-        '<div style="font-family:\'Marcellus\',serif;font-size:52px;line-height:0.96;color:' + ink + ';margin-top:2px;">' + esc(co.name) + "</div>" +
+        '<div style="font-family:\'Marcellus\',serif;font-size:' + nameFs + 'px;line-height:0.96;color:' + ink + ';margin-top:2px;white-space:nowrap;">' + esc(co.name) + "</div>" +
         '<div style="margin-top:9px;font-family:\'Special Elite\',monospace;font-size:9.5px;letter-spacing:1.5px;color:' + soft + ';">' + esc(co.region.toUpperCase()) + "&nbsp;&nbsp;·&nbsp;&nbsp;" + this.fmtCoord(co) + "</div>" +
         '<div style="margin-top:3px;font-family:\'Special Elite\',monospace;font-size:9.5px;letter-spacing:1.5px;color:' + soft + ';">' + co.entries.length + " ENTRIES&nbsp;&nbsp;·&nbsp;&nbsp;FIRST LOGGED " + co.year + "</div>" +
         "</div></div>";

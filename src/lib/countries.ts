@@ -1,7 +1,13 @@
-// Catalog of loggable countries, keyed by the world-atlas numeric country id
-// (ISO 3166-1 numeric, no leading zeros — matching the ids in
-// world-atlas/countries-110m). Coordinates are approximate label centroids,
-// used to place stamps on the globe/map.
+// Catalog of loggable countries — generated from world-atlas/countries-110m
+// (the same TopoJSON the globe draws) so the map and the picker always match.
+// Regenerate with `npm run countries:generate`; hand-tuned names/regions/label
+// coordinates live in scripts/generate-countries.mjs.
+//
+// Ids are the world-atlas numeric country ids (ISO 3166-1 numeric, no leading
+// zeros), plus synthetic ids ("kosovo", "somaliland", "n-cyprus") for the three
+// map features that ship without one.
+
+import { COUNTRY_CATALOG } from "./countryCatalog.generated";
 
 export interface CatalogCountry {
   id: string;
@@ -11,78 +17,7 @@ export interface CatalogCountry {
   lat: number;
 }
 
-export const COUNTRY_CATALOG: CatalogCountry[] = [
-  // — Export demo set (kept exact) —
-  { id: "231", name: "Ethiopia", region: "Horn of Africa", lon: 39.6, lat: 8.6 },
-  { id: "356", name: "India", region: "South Asia", lon: 78.9, lat: 22.0 },
-  { id: "124", name: "Canada", region: "North America", lon: -106, lat: 58 },
-  { id: "392", name: "Japan", region: "East Asia", lon: 138.2, lat: 37.5 },
-  { id: "380", name: "Italy", region: "Southern Europe", lon: 12.6, lat: 42.5 },
-  { id: "484", name: "Mexico", region: "North America", lon: -102.5, lat: 23.6 },
-  { id: "504", name: "Morocco", region: "North Africa", lon: -6.8, lat: 31.8 },
-  { id: "250", name: "France", region: "Western Europe", lon: 2.3, lat: 46.6 },
-  { id: "76", name: "Brazil", region: "South America", lon: -51, lat: -12 },
-  { id: "704", name: "Vietnam", region: "Southeast Asia", lon: 106, lat: 16 },
-  { id: "300", name: "Greece", region: "Southern Europe", lon: 22.0, lat: 39.3 },
-  { id: "604", name: "Peru", region: "South America", lon: -75, lat: -9.5 },
-
-  // — Wider catalog —
-  { id: "840", name: "United States", region: "North America", lon: -98, lat: 39.5 },
-  { id: "826", name: "United Kingdom", region: "Northern Europe", lon: -1.8, lat: 53 },
-  { id: "372", name: "Ireland", region: "Northern Europe", lon: -8, lat: 53.2 },
-  { id: "724", name: "Spain", region: "Southern Europe", lon: -3.7, lat: 40.2 },
-  { id: "620", name: "Portugal", region: "Southern Europe", lon: -8, lat: 39.5 },
-  { id: "276", name: "Germany", region: "Western Europe", lon: 10.4, lat: 51.2 },
-  { id: "528", name: "Netherlands", region: "Western Europe", lon: 5.3, lat: 52.1 },
-  { id: "56", name: "Belgium", region: "Western Europe", lon: 4.5, lat: 50.6 },
-  { id: "756", name: "Switzerland", region: "Central Europe", lon: 8.2, lat: 46.8 },
-  { id: "40", name: "Austria", region: "Central Europe", lon: 14.3, lat: 47.6 },
-  { id: "616", name: "Poland", region: "Central Europe", lon: 19, lat: 52 },
-  { id: "203", name: "Czechia", region: "Central Europe", lon: 15.5, lat: 49.8 },
-  { id: "348", name: "Hungary", region: "Central Europe", lon: 19.5, lat: 47.2 },
-  { id: "752", name: "Sweden", region: "Northern Europe", lon: 15, lat: 62 },
-  { id: "578", name: "Norway", region: "Northern Europe", lon: 9, lat: 61 },
-  { id: "208", name: "Denmark", region: "Northern Europe", lon: 9.5, lat: 56 },
-  { id: "246", name: "Finland", region: "Northern Europe", lon: 26, lat: 64 },
-  { id: "642", name: "Romania", region: "Eastern Europe", lon: 25, lat: 45.9 },
-  { id: "100", name: "Bulgaria", region: "Eastern Europe", lon: 25, lat: 42.7 },
-  { id: "804", name: "Ukraine", region: "Eastern Europe", lon: 31, lat: 49 },
-  { id: "643", name: "Russia", region: "Eastern Europe", lon: 100, lat: 61 },
-  { id: "191", name: "Croatia", region: "Southern Europe", lon: 16.4, lat: 45.2 },
-  { id: "792", name: "Turkey", region: "Western Asia", lon: 35, lat: 39 },
-  { id: "364", name: "Iran", region: "Western Asia", lon: 53, lat: 32 },
-  { id: "376", name: "Israel", region: "Western Asia", lon: 35, lat: 31.4 },
-  { id: "400", name: "Jordan", region: "Western Asia", lon: 36.5, lat: 31 },
-  { id: "422", name: "Lebanon", region: "Western Asia", lon: 35.8, lat: 33.9 },
-  { id: "682", name: "Saudi Arabia", region: "Western Asia", lon: 45, lat: 24 },
-  { id: "818", name: "Egypt", region: "North Africa", lon: 30, lat: 27 },
-  { id: "12", name: "Algeria", region: "North Africa", lon: 2.6, lat: 28 },
-  { id: "788", name: "Tunisia", region: "North Africa", lon: 9.5, lat: 34 },
-  { id: "710", name: "South Africa", region: "Southern Africa", lon: 24, lat: -29 },
-  { id: "404", name: "Kenya", region: "East Africa", lon: 38, lat: 0.5 },
-  { id: "566", name: "Nigeria", region: "West Africa", lon: 8, lat: 9 },
-  { id: "288", name: "Ghana", region: "West Africa", lon: -1.2, lat: 7.9 },
-  { id: "156", name: "China", region: "East Asia", lon: 104, lat: 35 },
-  { id: "410", name: "South Korea", region: "East Asia", lon: 127.8, lat: 36.5 },
-  { id: "158", name: "Taiwan", region: "East Asia", lon: 121, lat: 23.8 },
-  { id: "764", name: "Thailand", region: "Southeast Asia", lon: 101, lat: 15 },
-  { id: "360", name: "Indonesia", region: "Southeast Asia", lon: 118, lat: -2 },
-  { id: "458", name: "Malaysia", region: "Southeast Asia", lon: 102, lat: 4 },
-  { id: "608", name: "Philippines", region: "Southeast Asia", lon: 122, lat: 13 },
-  { id: "116", name: "Cambodia", region: "Southeast Asia", lon: 105, lat: 12.5 },
-  { id: "586", name: "Pakistan", region: "South Asia", lon: 70, lat: 30 },
-  { id: "50", name: "Bangladesh", region: "South Asia", lon: 90, lat: 24 },
-  { id: "144", name: "Sri Lanka", region: "South Asia", lon: 80.7, lat: 7.9 },
-  { id: "524", name: "Nepal", region: "South Asia", lon: 84, lat: 28 },
-  { id: "32", name: "Argentina", region: "South America", lon: -64, lat: -34 },
-  { id: "152", name: "Chile", region: "South America", lon: -71, lat: -30 },
-  { id: "170", name: "Colombia", region: "South America", lon: -73, lat: 4 },
-  { id: "218", name: "Ecuador", region: "South America", lon: -78, lat: -1.5 },
-  { id: "858", name: "Uruguay", region: "South America", lon: -56, lat: -33 },
-  { id: "862", name: "Venezuela", region: "South America", lon: -66, lat: 8 },
-  { id: "36", name: "Australia", region: "Oceania", lon: 134, lat: -25 },
-  { id: "554", name: "New Zealand", region: "Oceania", lon: 172, lat: -41 },
-];
+export { COUNTRY_CATALOG };
 
 const byId = new Map(COUNTRY_CATALOG.map((c) => [c.id, c]));
 
@@ -91,74 +26,152 @@ export function catalogCountry(id: string): CatalogCountry | undefined {
 }
 
 // Official long-form names shown above the country in the stamped logbook.
-// Anything not listed falls back to an empty string (the header omits the line).
+// Anything not listed falls back to an empty string (the book shows a generic
+// "DESTINATION" line instead).
 const COUNTRY_PREFIX: Record<string, string> = {
-  "231": "FEDERAL DEMOCRATIC REPUBLIC OF",
-  "356": "REPUBLIC OF",
-  "392": "STATE OF",
+  "231": "FEDERAL DEMOCRATIC REPUBLIC OF", // Ethiopia
+  "356": "REPUBLIC OF", // India
+  "392": "STATE OF", // Japan
   "380": "THE ITALIAN REPUBLIC",
   "484": "UNITED MEXICAN STATES",
-  "504": "KINGDOM OF",
+  "504": "KINGDOM OF", // Morocco
   "250": "THE FRENCH REPUBLIC",
-  "76": "FEDERATIVE REPUBLIC OF",
-  "704": "SOCIALIST REPUBLIC OF",
+  "76": "FEDERATIVE REPUBLIC OF", // Brazil
+  "704": "SOCIALIST REPUBLIC OF", // Vietnam
   "300": "HELLENIC REPUBLIC",
-  "604": "REPUBLIC OF",
+  "604": "REPUBLIC OF", // Peru
   "840": "UNITED STATES OF AMERICA",
   "826": "UNITED KINGDOM OF GB & NI",
-  "372": "REPUBLIC OF",
-  "276": "FEDERAL REPUBLIC OF",
-  "724": "KINGDOM OF",
+  "372": "REPUBLIC OF", // Ireland
+  "276": "FEDERAL REPUBLIC OF", // Germany
+  "724": "KINGDOM OF", // Spain
   "620": "PORTUGUESE REPUBLIC",
-  "528": "KINGDOM OF THE",
-  "56": "KINGDOM OF",
+  "528": "KINGDOM OF THE", // Netherlands
+  "56": "KINGDOM OF", // Belgium
   "756": "SWISS CONFEDERATION",
-  "40": "REPUBLIC OF",
-  "616": "REPUBLIC OF",
+  "40": "REPUBLIC OF", // Austria
+  "616": "REPUBLIC OF", // Poland
   "203": "CZECH REPUBLIC",
-  "348": "",
-  "752": "KINGDOM OF",
-  "578": "KINGDOM OF",
-  "208": "KINGDOM OF",
-  "246": "REPUBLIC OF",
-  "642": "",
-  "100": "REPUBLIC OF",
-  "804": "",
+  "752": "KINGDOM OF", // Sweden
+  "578": "KINGDOM OF", // Norway
+  "208": "KINGDOM OF", // Denmark
+  "246": "REPUBLIC OF", // Finland
+  "100": "REPUBLIC OF", // Bulgaria
   "643": "RUSSIAN FEDERATION",
-  "191": "REPUBLIC OF",
-  "792": "REPUBLIC OF",
-  "364": "ISLAMIC REPUBLIC OF",
-  "376": "STATE OF",
-  "400": "HASHEMITE KINGDOM OF",
-  "422": "REPUBLIC OF",
-  "682": "KINGDOM OF",
-  "818": "ARAB REPUBLIC OF",
-  "12": "PEOPLE'S DEMOCRATIC REPUBLIC OF",
-  "788": "REPUBLIC OF",
-  "710": "REPUBLIC OF",
-  "404": "REPUBLIC OF",
-  "566": "FEDERAL REPUBLIC OF",
-  "288": "REPUBLIC OF",
-  "156": "PEOPLE'S REPUBLIC OF",
-  "410": "REPUBLIC OF",
-  "158": "",
-  "764": "KINGDOM OF",
-  "360": "REPUBLIC OF",
-  "458": "",
-  "608": "REPUBLIC OF THE",
-  "116": "KINGDOM OF",
-  "586": "ISLAMIC REPUBLIC OF",
-  "50": "PEOPLE'S REPUBLIC OF",
-  "144": "DEMOCRATIC SOCIALIST REPUBLIC OF",
-  "524": "FEDERAL DEMOCRATIC REPUBLIC OF",
+  "191": "REPUBLIC OF", // Croatia
+  "792": "REPUBLIC OF", // Turkey
+  "364": "ISLAMIC REPUBLIC OF", // Iran
+  "376": "STATE OF", // Israel
+  "400": "HASHEMITE KINGDOM OF", // Jordan
+  "422": "REPUBLIC OF", // Lebanon
+  "682": "KINGDOM OF", // Saudi Arabia
+  "818": "ARAB REPUBLIC OF", // Egypt
+  "12": "PEOPLE'S DEMOCRATIC REPUBLIC OF", // Algeria
+  "788": "REPUBLIC OF", // Tunisia
+  "710": "REPUBLIC OF", // South Africa
+  "404": "REPUBLIC OF", // Kenya
+  "566": "FEDERAL REPUBLIC OF", // Nigeria
+  "288": "REPUBLIC OF", // Ghana
+  "156": "PEOPLE'S REPUBLIC OF", // China
+  "410": "REPUBLIC OF", // South Korea
+  "764": "KINGDOM OF", // Thailand
+  "360": "REPUBLIC OF", // Indonesia
+  "608": "REPUBLIC OF THE", // Philippines
+  "116": "KINGDOM OF", // Cambodia
+  "586": "ISLAMIC REPUBLIC OF", // Pakistan
+  "50": "PEOPLE'S REPUBLIC OF", // Bangladesh
+  "144": "DEMOCRATIC SOCIALIST REPUBLIC OF", // Sri Lanka
+  "524": "FEDERAL DEMOCRATIC REPUBLIC OF", // Nepal
   "32": "ARGENTINE REPUBLIC",
-  "152": "REPUBLIC OF",
-  "170": "REPUBLIC OF",
-  "218": "REPUBLIC OF",
-  "858": "ORIENTAL REPUBLIC OF",
-  "862": "BOLIVARIAN REPUBLIC OF",
-  "36": "COMMONWEALTH OF",
-  "554": "",
+  "152": "REPUBLIC OF", // Chile
+  "170": "REPUBLIC OF", // Colombia
+  "218": "REPUBLIC OF", // Ecuador
+  "858": "ORIENTAL REPUBLIC OF", // Uruguay
+  "862": "BOLIVARIAN REPUBLIC OF", // Venezuela
+  "36": "COMMONWEALTH OF", // Australia
+  // — full-map additions —
+  "8": "REPUBLIC OF", // Albania
+  "24": "REPUBLIC OF", // Angola
+  "31": "REPUBLIC OF", // Azerbaijan
+  "44": "COMMONWEALTH OF THE", // Bahamas
+  "51": "REPUBLIC OF", // Armenia
+  "64": "KINGDOM OF", // Bhutan
+  "68": "PLURINATIONAL STATE OF", // Bolivia
+  "72": "REPUBLIC OF", // Botswana
+  "104": "REPUBLIC OF THE UNION OF", // Myanmar
+  "108": "REPUBLIC OF", // Burundi
+  "112": "REPUBLIC OF", // Belarus
+  "120": "REPUBLIC OF", // Cameroon
+  "148": "REPUBLIC OF", // Chad
+  "178": "REPUBLIC OF THE", // Congo
+  "188": "REPUBLIC OF", // Costa Rica
+  "192": "REPUBLIC OF", // Cuba
+  "196": "REPUBLIC OF", // Cyprus
+  "222": "REPUBLIC OF", // El Salvador
+  "232": "STATE OF", // Eritrea
+  "233": "REPUBLIC OF", // Estonia
+  "262": "REPUBLIC OF", // Djibouti
+  "266": "GABONESE REPUBLIC",
+  "268": "", // Georgia
+  "270": "REPUBLIC OF THE", // Gambia
+  "320": "REPUBLIC OF", // Guatemala
+  "324": "REPUBLIC OF", // Guinea
+  "328": "CO-OPERATIVE REPUBLIC OF", // Guyana
+  "332": "REPUBLIC OF", // Haiti
+  "340": "REPUBLIC OF", // Honduras
+  "368": "REPUBLIC OF", // Iraq
+  "384": "REPUBLIC OF", // Côte d'Ivoire
+  "398": "REPUBLIC OF", // Kazakhstan
+  "414": "STATE OF", // Kuwait
+  "417": "KYRGYZ REPUBLIC",
+  "426": "KINGDOM OF", // Lesotho
+  "428": "REPUBLIC OF", // Latvia
+  "430": "REPUBLIC OF", // Liberia
+  "434": "STATE OF", // Libya
+  "440": "REPUBLIC OF", // Lithuania
+  "442": "GRAND DUCHY OF", // Luxembourg
+  "450": "REPUBLIC OF", // Madagascar
+  "454": "REPUBLIC OF", // Malawi
+  "466": "REPUBLIC OF", // Mali
+  "478": "ISLAMIC REPUBLIC OF", // Mauritania
+  "498": "REPUBLIC OF", // Moldova
+  "508": "REPUBLIC OF", // Mozambique
+  "512": "SULTANATE OF", // Oman
+  "516": "REPUBLIC OF", // Namibia
+  "558": "REPUBLIC OF", // Nicaragua
+  "562": "REPUBLIC OF THE", // Niger
+  "591": "REPUBLIC OF", // Panama
+  "598": "INDEPENDENT STATE OF", // Papua New Guinea
+  "600": "REPUBLIC OF", // Paraguay
+  "624": "REPUBLIC OF", // Guinea-Bissau
+  "626": "DEMOCRATIC REPUBLIC OF", // Timor-Leste
+  "630": "COMMONWEALTH OF", // Puerto Rico
+  "634": "STATE OF", // Qatar
+  "646": "REPUBLIC OF", // Rwanda
+  "686": "REPUBLIC OF", // Senegal
+  "688": "REPUBLIC OF", // Serbia
+  "694": "REPUBLIC OF", // Sierra Leone
+  "703": "SLOVAK REPUBLIC",
+  "705": "REPUBLIC OF", // Slovenia
+  "706": "FEDERAL REPUBLIC OF", // Somalia
+  "728": "REPUBLIC OF", // South Sudan
+  "729": "REPUBLIC OF THE", // Sudan
+  "740": "REPUBLIC OF", // Suriname
+  "748": "KINGDOM OF", // Eswatini
+  "760": "SYRIAN ARAB REPUBLIC",
+  "762": "REPUBLIC OF", // Tajikistan
+  "768": "TOGOLESE REPUBLIC",
+  "780": "REPUBLIC OF", // Trinidad and Tobago
+  "784": "", // United Arab Emirates
+  "800": "REPUBLIC OF", // Uganda
+  "807": "REPUBLIC OF", // North Macedonia
+  "834": "UNITED REPUBLIC OF", // Tanzania
+  "854": "", // Burkina Faso
+  "860": "REPUBLIC OF", // Uzbekistan
+  "887": "REPUBLIC OF", // Yemen
+  "894": "REPUBLIC OF", // Zambia
+  kosovo: "REPUBLIC OF",
+  somaliland: "REPUBLIC OF",
 };
 
 export function countryPrefix(id: string): string {

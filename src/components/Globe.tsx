@@ -28,10 +28,21 @@ interface GlobeProps {
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 // world-atlas country ids are zero-padded ("076"); the catalog uses plain
-// numeric strings ("76"). Normalize both sides so they match.
+// numeric strings ("76"). Normalize both sides so they match. Synthetic ids
+// (non-numeric, see below) pass through unchanged.
 function normId(id: unknown): string {
-  return String(Number(id));
+  const n = Number(id);
+  return Number.isFinite(n) ? String(n) : String(id ?? "");
 }
+
+// Three map features ship without an ISO numeric id (partially recognized
+// states). Assign them the synthetic ids the catalog uses so they highlight
+// and hit-test like everything else.
+const SYNTHETIC_IDS: Record<string, string> = {
+  Kosovo: "kosovo",
+  Somaliland: "somaliland",
+  "N. Cyprus": "n-cyprus",
+};
 
 function hexA(hex: string, a: number): string {
   const h = hex.replace("#", "");
@@ -109,6 +120,7 @@ class GlobeEngine {
     this.features = fc.features;
     this.featById = {};
     this.features.forEach((f) => {
+      if (f.id == null) f.id = SYNTHETIC_IDS[f.properties?.name] ?? "";
       this.featById[normId(f.id)] = f;
     });
     this.graticule = geoGraticule10();
