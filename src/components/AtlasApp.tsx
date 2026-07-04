@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import Globe, { type GlobeMode } from "./Globe";
 import PassportBook from "./PassportBook";
 import LogModal from "./LogModal";
-import { resolveCountryId } from "@/lib/countries";
+import { COUNTRY_CATALOG, resolveCountryId } from "@/lib/countries";
 import { assembleCountries } from "@/lib/logbook";
 import { buildCountDisc } from "@/lib/stamps";
-import { coercePaletteName, getPalette, isDarkPalette, paletteCssVars, type PaletteName } from "@/lib/palettes";
-import type { Entry, NewEntryInput, SessionUser } from "@/lib/types";
+import { coercePaletteName, getPalette, isDarkPalette, paletteCssVars, type Palette, type PaletteName } from "@/lib/palettes";
+import type { Entry, LoggedCountry, NewEntryInput, SessionUser } from "@/lib/types";
 
 interface AtlasAppProps {
   user: SessionUser;
@@ -17,6 +17,12 @@ interface AtlasAppProps {
 }
 
 type Tab = "globe" | "map" | "index";
+type IndexOrder = "entries" | "region";
+
+// Countries per region in the full catalog — the denominator of the
+// "N OF M" tally shown on each region heading in the grouped index.
+const REGION_TOTALS = new Map<string, number>();
+for (const c of COUNTRY_CATALOG) REGION_TOTALS.set(c.region, (REGION_TOTALS.get(c.region) ?? 0) + 1);
 
 export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
   const router = useRouter();
@@ -24,6 +30,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
   const [view, setView] = useState<"world" | "passport">("world");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("globe");
+  const [indexOrder, setIndexOrder] = useState<IndexOrder>("entries");
   const [paletteName, setPaletteName] = useState<PaletteName>(coercePaletteName(user.theme));
   const [logOpen, setLogOpen] = useState(false);
 
@@ -32,6 +39,16 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
   const palette = useMemo(() => getPalette(paletteName), [paletteName]);
   const countries = useMemo(() => assembleCountries(entries), [entries]);
   const ranked = useMemo(() => [...countries].sort((a, b) => b.entries.length - a.entries.length), [countries]);
+  // Regions A→Z; within each, countries inherit ranked's entries-desc order.
+  const byRegion = useMemo(() => {
+    const groups = new Map<string, LoggedCountry[]>();
+    for (const c of ranked) {
+      const list = groups.get(c.region);
+      if (list) list.push(c);
+      else groups.set(c.region, [c]);
+    }
+    return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  }, [ranked]);
   const maxEntries = ranked.length ? ranked[0].entries.length : 1;
   const totalEntries = entries.length;
 
@@ -200,34 +217,51 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
       {tab === "index" && (
         <div style={{ position: "absolute", inset: 0, zIndex: 4, background: "var(--paper)", overflowY: "auto" }}>
           <div style={{ maxWidth: 640, margin: "0 auto", padding: "104px 24px 64px" }}>
-            <div style={{ marginBottom: 18 }}>
+            <div style={{ marginBottom: 18, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
               <div style={{ fontFamily: "'Special Elite',monospace", fontSize: 11, letterSpacing: 2.5, color: "var(--sepia)" }}>THE INDEX</div>
+              {ranked.length > 0 && (
+                <div style={{ display: "inline-flex", border: "1px solid var(--line)", borderRadius: 2, overflow: "hidden" }}>
+                  {([["By entries", "entries"], ["By region", "region"]] as [string, IndexOrder][]).map(([label, order]) => {
+                    const on = indexOrder === order;
+                    return (
+                      <button
+                        key={order}
+                        onClick={() => setIndexOrder(order)}
+                        style={{ border: "none", padding: "5px 9px", cursor: "pointer", fontFamily: "'Special Elite',monospace", fontSize: 9.5, letterSpacing: 1, textTransform: "uppercase", background: on ? "var(--ink)" : "transparent", color: on ? "var(--paper)" : "var(--ink-soft)", transition: "all .15s ease" }}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
             {ranked.length === 0 ? (
               <div style={{ padding: "40px 0", textAlign: "center", fontFamily: "'EB Garamond',serif", fontStyle: "italic", fontSize: 16, color: "var(--ink-soft)" }}>
                 Your atlas is empty
               </div>
-            ) : (
+            ) : indexOrder === "entries" ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {ranked.map((c) => (
-                  <button
-                    key={c.id}
-                    onClick={() => openCountry(c.id)}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--panel)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
-                    style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", background: "none", border: "none", borderRadius: 4, padding: "10px 12px", cursor: "pointer", transition: "background .15s" }}
-                  >
-                    <div style={{ flex: "0 0 auto", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center" }} dangerouslySetInnerHTML={{ __html: buildCountDisc(c, { size: 44, palette }) }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
-                        <div style={{ fontFamily: "Marcellus,serif", fontSize: 19, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.name}</div>
-                        <div style={{ fontFamily: "'Special Elite',monospace", fontSize: 10.5, letterSpacing: 1, color: "var(--ink-soft)", flex: "0 0 auto" }}>{c.region.toUpperCase()}</div>
-                      </div>
-                      <div style={{ height: 5, background: "var(--line)", borderRadius: 3, marginTop: 8, overflow: "hidden" }}>
-                        <div style={{ width: `${Math.round((c.entries.length / maxEntries) * 100)}%`, height: "100%", background: "var(--sepia)", borderRadius: 3 }} />
+                  <IndexRow key={c.id} country={c} palette={palette} maxEntries={maxEntries} showRegion onOpen={openCountry} />
+                ))}
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 26 }}>
+                {byRegion.map(([region, list]) => (
+                  <div key={region}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, padding: "0 12px 7px", borderBottom: "1px solid var(--line)", marginBottom: 6 }}>
+                      <div style={{ fontFamily: "'Special Elite',monospace", fontSize: 10, letterSpacing: 2, color: "var(--sepia)" }}>{region.toUpperCase()}</div>
+                      <div style={{ fontFamily: "'Special Elite',monospace", fontSize: 9.5, letterSpacing: 1, color: "var(--ink-soft)", flex: "0 0 auto" }}>
+                        {list.length} OF {REGION_TOTALS.get(region) ?? list.length}
                       </div>
                     </div>
-                  </button>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                      {list.map((c) => (
+                        <IndexRow key={c.id} country={c} palette={palette} maxEntries={maxEntries} showRegion={false} onOpen={openCountry} />
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
@@ -276,6 +310,42 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
         />
       )}
     </div>
+  );
+}
+
+function IndexRow({
+  country: c,
+  palette,
+  maxEntries,
+  showRegion,
+  onOpen,
+}: {
+  country: LoggedCountry;
+  palette: Palette;
+  maxEntries: number;
+  showRegion: boolean;
+  onOpen: (id: string) => void;
+}) {
+  return (
+    <button
+      onClick={() => onOpen(c.id)}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--panel)")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+      style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", background: "none", border: "none", borderRadius: 4, padding: "10px 12px", cursor: "pointer", transition: "background .15s" }}
+    >
+      <div style={{ flex: "0 0 auto", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center" }} dangerouslySetInnerHTML={{ __html: buildCountDisc(c, { size: 44, palette }) }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
+          <div style={{ fontFamily: "Marcellus,serif", fontSize: 19, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.name}</div>
+          {showRegion && (
+            <div style={{ fontFamily: "'Special Elite',monospace", fontSize: 10.5, letterSpacing: 1, color: "var(--ink-soft)", flex: "0 0 auto" }}>{c.region.toUpperCase()}</div>
+          )}
+        </div>
+        <div style={{ height: 5, background: "var(--line)", borderRadius: 3, marginTop: 8, overflow: "hidden" }}>
+          <div style={{ width: `${Math.round((c.entries.length / maxEntries) * 100)}%`, height: "100%", background: "var(--sepia)", borderRadius: 3 }} />
+        </div>
+      </div>
+    </button>
   );
 }
 
