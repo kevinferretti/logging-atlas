@@ -102,6 +102,43 @@ const CURATED = new Map(
   ].map((c) => [c.id, c]),
 );
 
+// The canonical region taxonomy — the only place a region name may be spelled
+// out. Every region label in CURATED and REGIONS must match one of these (the
+// script throws otherwise), and each name must be used by at least one
+// country, so a typo can't silently mint a phantom region group in the index.
+// Emitted into the generated file as REGION_NAMES plus the Region union type.
+const REGION_NAMES = [
+  // Africa
+  "North Africa",
+  "Horn of Africa",
+  "East Africa",
+  "Central Africa",
+  "West Africa",
+  "Southern Africa",
+  // Asia
+  "Western Asia",
+  "Caucasus",
+  "Central Asia",
+  "South Asia",
+  "East Asia",
+  "Southeast Asia",
+  // Europe
+  "Eastern Europe",
+  "Northern Europe",
+  "Southern Europe",
+  "Western Europe",
+  "Central Europe",
+  // Americas
+  "North America",
+  "Central America",
+  "Caribbean",
+  "South America",
+  // Oceania & the rest
+  "Oceania",
+  "Antarctica",
+  "Indian Ocean",
+];
+
 // Region labels for everything not in CURATED. Every feature in the dataset
 // must be covered by CURATED or this map — the script throws otherwise, so a
 // world-atlas upgrade that adds countries fails loudly instead of silently
@@ -210,12 +247,26 @@ for (const f of fc.features) {
   entries.push({ id, name: NAMES[id] ?? f.properties.name, region, lon, lat });
 }
 
-// Catch stale REGIONS/NAMES keys after a dataset change.
+// Every region label — curated or mapped — must come from the canonical
+// taxonomy, and every taxonomy name must be in use.
+const regionSet = new Set(REGION_NAMES);
+if (regionSet.size !== REGION_NAMES.length) throw new Error("Duplicate name in REGION_NAMES");
+for (const e of entries) {
+  if (!regionSet.has(e.region))
+    throw new Error('Unknown region "' + e.region + '" on ' + e.name + " — fix the typo or add it to REGION_NAMES");
+}
+const usedRegions = new Set(entries.map((e) => e.region));
+for (const name of REGION_NAMES) {
+  if (!usedRegions.has(name))
+    throw new Error('REGION_NAMES entry "' + name + '" is not used by any country — remove it');
+}
+
+// Catch stale CURATED/REGIONS/NAMES keys after a dataset change.
 const ids = new Set(entries.map((e) => e.id));
-for (const key of [...Object.keys(REGIONS), ...Object.keys(NAMES)]) {
+for (const key of [...CURATED.keys(), ...Object.keys(REGIONS), ...Object.keys(NAMES)]) {
   if (!ids.has(key))
     throw new Error(
-      "REGIONS/NAMES key " + key + " matches no feature in countries-110m. If the id was retired " +
+      "CURATED/REGIONS/NAMES key " + key + " matches no feature in countries-110m. If the id was retired " +
         "and users may have logged entries under it, add a migration to LEGACY_COUNTRY_IDS in src/lib/countries.ts.",
     );
 }
@@ -225,11 +276,20 @@ entries.sort((a, b) => a.name.localeCompare(b.name, "en"));
 const lines = entries.map(
   (e) => `  { id: ${JSON.stringify(e.id)}, name: ${JSON.stringify(e.name)}, region: ${JSON.stringify(e.region)}, lon: ${e.lon}, lat: ${e.lat} },`,
 );
+const regionLines = REGION_NAMES.map((r) => `  ${JSON.stringify(r)},`);
 const out = `// GENERATED FILE — do not edit by hand. Run: npm run countries:generate
 // Built from world-atlas/countries-110m.json (the dataset the globe draws), so
 // every country on the map is loggable. ${entries.length} countries.
 
 import type { CatalogCountry } from "./countries";
+
+// The canonical region taxonomy. CatalogCountry.region is the Region union, so
+// a label outside this list is a type error anywhere in the app.
+export const REGION_NAMES = [
+${regionLines.join("\n")}
+] as const;
+
+export type Region = (typeof REGION_NAMES)[number];
 
 export const COUNTRY_CATALOG: CatalogCountry[] = [
 ${lines.join("\n")}

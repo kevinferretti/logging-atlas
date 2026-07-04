@@ -7,17 +7,18 @@
 // zeros), plus synthetic ids ("kosovo", "somaliland", "n-cyprus") for the three
 // map features that ship without one.
 
-import { COUNTRY_CATALOG } from "./countryCatalog.generated";
+import { COUNTRY_CATALOG, REGION_NAMES, type Region } from "./countryCatalog.generated";
 
 export interface CatalogCountry {
   id: string;
   name: string;
-  region: string;
+  region: Region;
   lon: number;
   lat: number;
 }
 
-export { COUNTRY_CATALOG };
+export { COUNTRY_CATALOG, REGION_NAMES };
+export type { Region };
 
 const byId = new Map(COUNTRY_CATALOG.map((c) => [c.id, c]));
 

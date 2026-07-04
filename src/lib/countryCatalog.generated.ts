@@ -4,6 +4,37 @@
 
 import type { CatalogCountry } from "./countries";
 
+// The canonical region taxonomy. CatalogCountry.region is the Region union, so
+// a label outside this list is a type error anywhere in the app.
+export const REGION_NAMES = [
+  "North Africa",
+  "Horn of Africa",
+  "East Africa",
+  "Central Africa",
+  "West Africa",
+  "Southern Africa",
+  "Western Asia",
+  "Caucasus",
+  "Central Asia",
+  "South Asia",
+  "East Asia",
+  "Southeast Asia",
+  "Eastern Europe",
+  "Northern Europe",
+  "Southern Europe",
+  "Western Europe",
+  "Central Europe",
+  "North America",
+  "Central America",
+  "Caribbean",
+  "South America",
+  "Oceania",
+  "Antarctica",
+  "Indian Ocean",
+] as const;
+
+export type Region = (typeof REGION_NAMES)[number];
+
 export const COUNTRY_CATALOG: CatalogCountry[] = [
   { id: "4", name: "Afghanistan", region: "Central Asia", lon: 66, lat: 33.8 },
   { id: "8", name: "Albania", region: "Southern Europe", lon: 20, lat: 41.1 },
