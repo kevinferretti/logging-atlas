@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Globe, { type GlobeMode } from "./Globe";
 import PassportBook from "./PassportBook";
 import LogModal from "./LogModal";
+import QuizGame from "./QuizGame";
 import { COUNTRY_CATALOG, resolveCountryId } from "@/lib/countries";
 import { assembleCountries } from "@/lib/logbook";
 import { buildCountDisc } from "@/lib/stamps";
@@ -35,6 +36,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
   const [logOpen, setLogOpen] = useState(false);
   // Country preselected in the log modal (set when clicking an empty country).
   const [logCountryId, setLogCountryId] = useState<string | null>(null);
+  const [quizOpen, setQuizOpen] = useState(false);
 
   const globeMode: GlobeMode = tab === "map" ? "map" : "globe";
 
@@ -143,7 +145,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
         countries={countries}
         palette={palette}
         mode={globeMode}
-        active={view === "world" && tab !== "index"}
+        active={view === "world" && tab !== "index" && !quizOpen}
         onSelect={selectFromMap}
       />
 
@@ -174,6 +176,28 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
             }}
           >
             ＋ Log an entry
+          </button>
+          <button
+            onClick={() => setQuizOpen(true)}
+            style={{
+              marginTop: 10,
+              marginLeft: 8,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 7,
+              background: "none",
+              border: "1px dashed var(--teal)",
+              borderRadius: 2,
+              padding: "7px 13px",
+              cursor: "pointer",
+              fontFamily: "'Special Elite',monospace",
+              fontSize: 10.5,
+              letterSpacing: 1,
+              textTransform: "uppercase",
+              color: "var(--teal)",
+            }}
+          >
+            ◎ Map quiz
           </button>
         </div>
         <div style={{ pointerEvents: "auto", display: "flex", gap: 22, alignItems: "flex-start", textAlign: "right" }}>
@@ -320,6 +344,9 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
           onDelete={deleteEntry}
         />
       )}
+
+      {/* MAP QUIZ OVERLAY */}
+      {quizOpen && <QuizGame entries={entries} palette={palette} onClose={() => setQuizOpen(false)} />}
 
       {/* GLOBAL LOG MODAL */}
       {logOpen && (
