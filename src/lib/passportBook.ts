@@ -32,7 +32,23 @@ export interface BookCountry {
   lon: number;
   lat: number;
   year: number;
-  entries: Entry[];
+  entries: Entry[]; // real logs and wish-list items together
+}
+
+/** Real-log vs wish-list tallies for a country's entry list. */
+function tally(entries: Entry[]): { logs: number; wishes: number } {
+  let wishes = 0;
+  for (const e of entries) if (e.wishlist) wishes++;
+  return { logs: entries.length - wishes, wishes };
+}
+
+/** "3 ENTRIES · 2 WISHED · FIRST LOGGED 2019" — parts drop out when empty. */
+function tallyLine(co: BookCountry, withYear: boolean, sep = " · "): string {
+  const { logs, wishes } = tally(co.entries);
+  const parts = [logs + (logs === 1 ? " ENTRY" : " ENTRIES")];
+  if (wishes > 0) parts.push(wishes + " WISHED");
+  if (withYear && logs > 0) parts.push("FIRST LOGGED " + co.year);
+  return parts.join(sep);
 }
 
 export interface BookElements {
@@ -304,7 +320,7 @@ export class PassportBook {
       const keep = d * 0.4;
       if (Math.abs(cx - cen) < keep) cx = cen + (cx < cen ? -keep : keep);
       const rot = (this.rseed(ci * 131 + i, 4) - 0.5) * 46;
-      const cap = e.title + "  ·  '" + String(e.year).slice(2);
+      const cap = e.title + (e.wishlist ? "  ·  WISH LIST" : "  ·  '" + String(e.year).slice(2));
       return {
         x: cx,
         y: cy,
@@ -322,8 +338,22 @@ export class PassportBook {
   }
   clusterHTML(ci: number, offset: number): string {
     const items = this.layout(ci);
+    // This page's window in spread coordinates (left page offset 0, right
+    // page offset -PW).
+    const x0 = -offset;
+    const x1 = -offset + this.PAGE_W;
     let h = "";
     items.forEach((it) => {
+      // Only render a stamp on this page if its rotated artwork can actually
+      // reach it. Layout keeps stamp centres >= 0.4d from the spine, so the
+      // copy on the neighbouring page is at most a thin sliver; rendering
+      // every stamp on both pages left fully-clipped orphan copies whose
+      // hover shadows painted floating smudges cut off at the spine.
+      const ext = it.d * 0.66;
+      if (it.x + ext <= x0 || it.x - ext >= x1) return;
+      // The copy on the page that owns the centre gets the hover shadow; a
+      // sliver copy lifts with its twin but never shows a shadow of its own.
+      const main = it.x >= x0 && it.x < x1;
       // No will-change here: pre-promoted stamp surfaces inside the 3D-rotating
       // leaf get mis-projected by Firefox's compositor (chopped tiles/seams
       // during turns). Hover transitions still promote transiently, which is
@@ -331,11 +361,13 @@ export class PassportBook {
       // into the ink colours (blended compositor layers glitch on some GPUs).
       // The box is d*1.16 to match the padded SVG; the artwork renders at d.
       const bd = it.d * 1.16;
+      // Wish-list stamps render ghosted — pencilled in, not yet inked.
+      const ghost = it.entry.wishlist ? "opacity:.45;" : "";
       h +=
-        '<div class="om-stamp" data-sid="' + it.sid + '" data-eid="' + esc(it.entry.id) + '" data-cap="' + esc(it.cap) +
+        '<div class="om-stamp" data-sid="' + it.sid + '" data-main="' + (main ? 1 : 0) + '" data-eid="' + esc(it.entry.id) + '" data-cap="' + esc(it.cap) +
         '" style="position:absolute;left:' + (it.x + offset - bd / 2).toFixed(1) + "px;top:" + (it.y - bd / 2).toFixed(1) +
         "px;width:" + bd.toFixed(0) + "px;height:" + bd.toFixed(0) + "px;--r:" + it.rot.toFixed(1) + "deg;transform:rotate(" + it.rot.toFixed(1) +
-        "deg);z-index:" + it.z + ';cursor:pointer;transition:transform .16s ease;">' +
+        "deg);z-index:" + it.z + ";" + ghost + 'cursor:pointer;transition:transform .16s ease;">' +
         '<div class="om-stamp-sh" style="position:absolute;left:10%;right:10%;top:56%;bottom:0;background:radial-gradient(ellipse at 50% 50%,rgba(40,20,5,.30),rgba(40,20,5,0) 68%);opacity:0;transition:opacity .16s ease;pointer-events:none;"></div>' +
         it.svg + "</div>";
     });
@@ -523,11 +555,13 @@ export class PassportBook {
     let rows = "";
     this.countries.forEach((c, i) => {
       const pg = pad((i + 1) * 2 + 1);
+      const { logs, wishes } = tally(c.entries);
+      const marks = logs + " ✦" + (wishes > 0 ? "&nbsp;&nbsp;" + wishes + " ☆" : "");
       rows +=
         '<button data-jump="' + this.countryTurn(i) + '" style="display:flex;align-items:center;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid ' + line + ';padding:11px 4px;cursor:pointer;gap:12px;" onmouseover="this.style.background=\'rgba(138,90,59,.06)\'" onmouseout="this.style.background=\'none\'">' +
         '<span style="flex:0 0 22px;font-family:\'Courier Prime\',monospace;font-size:11px;color:' + sep + ';">' + pad(i + 1) + "</span>" +
         '<span style="flex:1;min-width:0;"><span style="font-family:\'Marcellus\',serif;font-size:20px;color:' + ink + ';">' + esc(c.name) + '</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:' + soft + ';margin-left:9px;">' + esc(c.region) + "</span></span>" +
-        '<span style="flex:0 0 auto;font-family:\'Special Elite\',monospace;font-size:11px;color:' + sep + ';margin-right:14px;">' + c.entries.length + " ✦</span>" +
+        '<span style="flex:0 0 auto;font-family:\'Special Elite\',monospace;font-size:11px;color:' + sep + ';margin-right:14px;">' + marks + "</span>" +
         '<span style="flex:0 0 auto;font-family:\'Courier Prime\',monospace;font-size:11px;color:' + soft + ';">p.' + pg + "</span></button>";
     });
     return (
@@ -593,7 +627,7 @@ export class PassportBook {
         '<div style="font-family:\'Special Elite\',monospace;font-size:9px;letter-spacing:3px;color:' + sep + ';text-transform:uppercase;">' + esc(co.prefix) + "</div>" +
         '<div style="font-family:\'Marcellus\',serif;font-size:' + nameFs + 'px;line-height:0.96;color:' + ink + ';margin-top:2px;white-space:nowrap;">' + esc(co.name) + "</div>" +
         '<div style="margin-top:9px;font-family:\'Special Elite\',monospace;font-size:9.5px;letter-spacing:1.5px;color:' + soft + ';">' + esc(co.region.toUpperCase()) + "&nbsp;&nbsp;·&nbsp;&nbsp;" + this.fmtCoord(co) + "</div>" +
-        '<div style="margin-top:3px;font-family:\'Special Elite\',monospace;font-size:9.5px;letter-spacing:1.5px;color:' + soft + ';">' + co.entries.length + " ENTRIES&nbsp;&nbsp;·&nbsp;&nbsp;FIRST LOGGED " + co.year + "</div>" +
+        '<div style="margin-top:3px;font-family:\'Special Elite\',monospace;font-size:9.5px;letter-spacing:1.5px;color:' + soft + ';">' + tallyLine(co, true, "&nbsp;&nbsp;·&nbsp;&nbsp;") + "</div>" +
         "</div></div>";
     }
     let foot = "";
@@ -747,7 +781,7 @@ export class PassportBook {
     if (sp.left.k === "index") return "INDEX OF VISAS";
     if (sp.left.k === "cL") {
       const co = this.countries[sp.left.ci!];
-      return co.name.toUpperCase() + " · " + co.entries.length + " ENTRIES";
+      return co.name.toUpperCase() + " · " + tallyLine(co, false);
     }
     if (sp.left.k === "await") return "AWAITING ENTRIES";
     return "";
@@ -792,7 +826,7 @@ export class PassportBook {
       if (on) {
         n.style.transform = "translateY(-7px) scale(1.06) rotate(" + r + ")";
         n.style.zIndex = "400";
-        if (sh) sh.style.opacity = "1";
+        if (sh && n.dataset.main === "1") sh.style.opacity = "1";
       } else {
         n.style.transform = "rotate(" + r + ")";
         n.style.zIndex = "";
@@ -820,7 +854,7 @@ export class PassportBook {
       ? '<a href="' + esc(e.link) + '" target="_blank" rel="noreferrer noopener" style="display:block;margin-top:8px;font-family:\'Special Elite\',monospace;font-size:11px;color:#8A5A3B;text-decoration:none;word-break:break-all;">↗ ' + esc(this.linkHost(e.link)) + "</a>"
       : "";
     pop.innerHTML =
-      '<div style="font-family:\'Special Elite\',monospace;font-size:9px;letter-spacing:1.6px;text-transform:uppercase;color:' + ink + ';">' + this.CATL[e.category] + " · '" + String(e.year).slice(2) + "</div>" +
+      '<div style="font-family:\'Special Elite\',monospace;font-size:9px;letter-spacing:1.6px;text-transform:uppercase;color:' + ink + ';">' + this.CATL[e.category] + (e.wishlist ? " · ☆ WISH LIST" : " · '" + String(e.year).slice(2)) + "</div>" +
       '<div style="font-family:\'Marcellus\',serif;font-size:19px;color:#2E2A22;margin-top:3px;line-height:1.12;">' + esc(e.title) + "</div>" +
       linkRow +
       '<button data-del="' + esc(e.id) + '" style="margin-top:12px;width:100%;background:none;border:1px solid rgba(155,74,57,.5);color:#9B4A39;border-radius:2px;padding:7px 0;cursor:pointer;font-family:\'Special Elite\',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;">Remove entry</button>';
