@@ -111,15 +111,20 @@ export class PassportBook {
   _key: ((e: KeyboardEvent) => void) | null = null;
   _ac: AudioContext | null = null;
 
-  // DOM handles within the book
+  // DOM handles within the book. The turning page is TWO flat sibling
+  // elements (front/back sheet) in mirrored page slots hinged on the spine,
+  // rotated in lockstep and swapped at 90° by backface culling — never a
+  // preserve-3d two-face leaf. A 3D rendering context makes the faces (and
+  // anything promoted inside them) child surfaces of an animating 3D
+  // ancestor, which Firefox's WebRender misprojects as stale rectangles.
   stageEl!: HTMLElement;
   leftEl!: HTMLElement;
   rightEl!: HTMLElement;
   spineEl!: HTMLElement;
-  leafEl!: HTMLElement;
-  frontEl!: HTMLElement;
-  backEl!: HTMLElement;
-  curlEl!: HTMLElement;
+  leafF!: HTMLElement; // front sheet (shows ctx.front, 0° → 90°)
+  leafFC!: HTMLElement;
+  leafB!: HTMLElement; // back sheet (shows ctx.back, 90° → 180°)
+  leafBC!: HTMLElement;
   slvL!: HTMLElement;
   slvR!: HTMLElement;
 
@@ -622,29 +627,39 @@ export class PassportBook {
     const b = this.els.book;
     const PW = this.PAGE_W;
     const PH = this.PAGE_H;
+    // Each turning sheet is one flat surface: content div + a static curl
+    // shading div. No box-shadow (Gecko smears shadows on rotating elements)
+    // and no preserve-3d (a 3D rendering context is what WebRender
+    // misprojects). backface-visibility on the flat sheets is what swaps
+    // them at 90°: the rasterizer culls the front sheet the instant it turns
+    // past edge-on and unculls the back sheet, in sync with the rendered
+    // angle every frame — a JS-timed opacity swap misses frames whenever the
+    // main thread hiccups while the compositor keeps rotating.
+    const sheet = (cls: string, z: number, radius: string) =>
+      '<div class="' + cls + '" style="position:absolute;top:0;width:' + PW + "px;height:" + PH + "px;z-index:" + z + ";border-radius:" + radius + ';overflow:hidden;display:none;backface-visibility:hidden;will-change:transform;">' +
+      '<div class="om-sheet" style="position:absolute;inset:0;"></div>' +
+      '<div class="om-curl" style="position:absolute;inset:0;pointer-events:none;opacity:0;"></div>' +
+      "</div>";
     b.innerHTML =
-      '<div class="om-stage" style="position:absolute;left:50%;top:50%;width:' + PW * 2 + "px;height:" + PH + "px;margin-left:" + -PW + "px;margin-top:" + -PH / 2 + 'px;transform-style:preserve-3d;perspective:2400px;transition:transform .62s cubic-bezier(.42,.05,.2,1);">' +
+      '<div class="om-stage" style="position:absolute;left:50%;top:50%;width:' + PW * 2 + "px;height:" + PH + "px;margin-left:" + -PW + "px;margin-top:" + -PH / 2 + 'px;perspective:2400px;transition:transform .62s cubic-bezier(.42,.05,.2,1);">' +
       '<div class="om-stack-l" style="position:absolute;left:-6px;top:6px;width:8px;height:' + (PH - 12) + 'px;border-radius:3px 0 0 3px;background:repeating-linear-gradient(90deg,#e7dab8,#f3ead6 2px,#dccba0 3px);box-shadow:-2px 2px 6px rgba(0,0,0,.25);display:none;"></div>' +
       '<div class="om-stack-r" style="position:absolute;right:-6px;top:6px;width:8px;height:' + (PH - 12) + 'px;border-radius:0 3px 3px 0;background:repeating-linear-gradient(90deg,#dccba0,#f3ead6 1px,#e7dab8 3px);box-shadow:2px 2px 6px rgba(0,0,0,.25);display:none;"></div>' +
       // isolation:isolate keeps each page's internal z-indexes (header z200,
-      // stamps z10-49) from escaping above the turning leaf.
-      '<div class="om-page om-left" style="position:absolute;left:0;top:0;width:' + PW + "px;height:" + PH + 'px;border-radius:4px 2px 2px 4px;overflow:hidden;isolation:isolate;box-shadow:0 1px 3px rgba(0,0,0,.18);backface-visibility:hidden;"></div>' +
-      '<div class="om-page om-right" style="position:absolute;left:' + PW + "px;top:0;width:" + PW + "px;height:" + PH + 'px;border-radius:2px 4px 4px 2px;overflow:hidden;isolation:isolate;box-shadow:0 1px 3px rgba(0,0,0,.18);backface-visibility:hidden;"></div>' +
+      // stamps z10-49) from escaping above the turning sheets.
+      '<div class="om-page om-left" style="position:absolute;left:0;top:0;width:' + PW + "px;height:" + PH + 'px;border-radius:4px 2px 2px 4px;overflow:hidden;isolation:isolate;box-shadow:0 1px 3px rgba(0,0,0,.18);"></div>' +
+      '<div class="om-page om-right" style="position:absolute;left:' + PW + "px;top:0;width:" + PW + "px;height:" + PH + 'px;border-radius:2px 4px 4px 2px;overflow:hidden;isolation:isolate;box-shadow:0 1px 3px rgba(0,0,0,.18);"></div>' +
       '<div class="om-spine" style="position:absolute;left:' + (PW - 9) + "px;top:0;width:18px;height:" + PH + 'px;z-index:8;pointer-events:none;background:linear-gradient(90deg,rgba(40,26,10,.15),rgba(40,26,10,.04) 34%,rgba(255,250,235,.10) 50%,rgba(40,26,10,.04) 66%,rgba(40,26,10,.15));"><div style="position:absolute;left:50%;top:12px;bottom:12px;width:0;border-left:1px dashed rgba(70,50,25,.45);"></div></div>' +
-      '<div class="om-leaf" style="position:absolute;top:0;width:' + PW + "px;height:" + PH + 'px;transform-style:preserve-3d;z-index:300;display:none;will-change:transform;">' +
-      '<div class="om-face om-front" style="position:absolute;inset:0;overflow:hidden;isolation:isolate;backface-visibility:hidden;border-radius:2px 4px 4px 2px;box-shadow:0 2px 10px rgba(0,0,0,.2);"></div>' +
-      '<div class="om-face om-back" style="position:absolute;inset:0;overflow:hidden;isolation:isolate;backface-visibility:hidden;border-radius:4px 2px 2px 4px;transform:rotateY(180deg);box-shadow:0 2px 10px rgba(0,0,0,.2);"></div>' +
-      '<div class="om-curl" style="position:absolute;inset:0;pointer-events:none;border-radius:2px;opacity:0;"></div>' +
-      "</div>" +
+      sheet("om-leaf-b", 300, "4px 2px 2px 4px") +
+      sheet("om-leaf-f", 301, "2px 4px 4px 2px") +
       "</div>";
     this.stageEl = b.querySelector(".om-stage")!;
     this.leftEl = b.querySelector(".om-left")!;
     this.rightEl = b.querySelector(".om-right")!;
     this.spineEl = b.querySelector(".om-spine")!;
-    this.leafEl = b.querySelector(".om-leaf")!;
-    this.frontEl = b.querySelector(".om-front")!;
-    this.backEl = b.querySelector(".om-back")!;
-    this.curlEl = b.querySelector(".om-curl")!;
+    this.leafF = b.querySelector(".om-leaf-f")!;
+    this.leafFC = this.leafF.querySelector(".om-sheet")!;
+    this.leafB = b.querySelector(".om-leaf-b")!;
+    this.leafBC = this.leafB.querySelector(".om-sheet")!;
     this.slvL = b.querySelector(".om-stack-l")!;
     this.slvR = b.querySelector(".om-stack-r")!;
     this._built = true;
@@ -654,10 +669,11 @@ export class PassportBook {
     el.style.background = this.isCover(roleK) ? this.coverBg() : "#F3EAD6";
   }
   hideLeaf() {
-    if (!this.leafEl) return;
-    this.leafEl.style.transition = "none";
-    this.leafEl.style.display = "none";
-    this.curlEl.style.opacity = "0";
+    if (!this.leafF) return;
+    [this.leafF, this.leafB].forEach((l) => {
+      l.style.transition = "none";
+      l.style.display = "none";
+    });
   }
 
   setRest(t: number, settle?: boolean) {
@@ -830,32 +846,40 @@ export class PassportBook {
   }
 
   // ---------- turning ----------
-  curlPaint(p: number) {
-    if (!this.curlEl) return;
-    const side = this._ctx ? this._ctx.side : "R";
-    const ang = side === "R" ? 120 : 60;
-    this.curlEl.style.opacity = String(0.9 * Math.sin(Math.PI * Math.min(1, Math.max(0, p))));
-    this.curlEl.style.background = "linear-gradient(" + ang + "deg, rgba(0,0,0,.34) 0%, rgba(0,0,0,.06) 22%, rgba(255,250,238,.30) 48%, rgba(0,0,0,.05) 74%, rgba(0,0,0,.22) 100%)";
-  }
-
   setupLeaf(ctx: TurnCtx) {
     const PW = this.PAGE_W;
-    const leaf = this.leafEl;
-    leaf.style.transition = "none";
-    leaf.style.display = "block";
-    if (ctx.side === "R") {
-      leaf.style.left = PW + "px";
-      leaf.style.transformOrigin = "left center";
-    } else {
-      leaf.style.left = "0px";
-      leaf.style.transformOrigin = "right center";
-    }
-    this.frontEl.innerHTML = ctx.front;
-    this.frontEl.style.background = ctx.frontBg || "#F3EAD6";
-    this.backEl.innerHTML = ctx.back;
-    this.backEl.style.background = ctx.backBg || "#F3EAD6";
-    this.frontEl.style.visibility = "visible";
-    this.backEl.style.visibility = "visible";
+    // The two sheets sit in OPPOSITE page slots, each hinged on the spine:
+    // the front sheet on the source side, the back sheet mirrored across the
+    // spine on the destination side. Rotated in lockstep (rot / rot±180) the
+    // back sheet tracks the same physical plane as the front and lands flat
+    // over the destination page. Giving both sheets the source-side slot is
+    // the bug that made the second half of every turn render behind the book
+    // over the wrong page.
+    [this.leafF, this.leafB].forEach((l) => {
+      l.style.transition = "none";
+      l.style.display = "block";
+      const rightSlot = (l === this.leafF) === (ctx.side === "R");
+      if (rightSlot) {
+        l.style.left = PW + "px";
+        l.style.transformOrigin = "left center";
+      } else {
+        l.style.left = "0px";
+        l.style.transformOrigin = "right center";
+      }
+    });
+    this.leafFC.innerHTML = ctx.front;
+    this.leafFC.style.background = ctx.frontBg || "#F3EAD6";
+    this.leafBC.innerHTML = ctx.back;
+    this.leafBC.style.background = ctx.backBg || "#F3EAD6";
+    // Static curl shading for the whole turn — animating it mid-flight would
+    // re-render the sheet surface every frame while the transform animates.
+    const ang = ctx.side === "R" ? 120 : 60;
+    const curlBg = "linear-gradient(" + ang + "deg, rgba(0,0,0,.26) 0%, rgba(0,0,0,.05) 22%, rgba(255,250,238,.24) 48%, rgba(0,0,0,.04) 74%, rgba(0,0,0,.18) 100%)";
+    [this.leafF, this.leafB].forEach((l) => {
+      const c = l.querySelector<HTMLElement>(".om-curl")!;
+      c.style.background = curlBg;
+      c.style.opacity = "0.6";
+    });
     if (ctx.reveal) {
       ctx.reveal.el.style.display = "block";
       ctx.reveal.el.innerHTML = this.pageRoleHTML(ctx.reveal.role);
@@ -888,11 +912,10 @@ export class PassportBook {
     this.setProgress(0);
   }
 
-  _faceCull(cos: number) {
-    if (!this.frontEl) return;
-    const past = cos < -0.0001;
-    this.frontEl.style.visibility = past ? "hidden" : "visible";
-    this.backEl.style.visibility = past ? "visible" : "hidden";
+  /** Back sheet angle: mirrors the front around the spine so it lands flat
+   *  and readable at the end of the turn. */
+  rotB(rot: number, side: "L" | "R"): number {
+    return rot + (side === "R" ? 180 : -180);
   }
 
   setProgress(p: number) {
@@ -901,10 +924,9 @@ export class PassportBook {
     if (!ctx) return;
     const rot = (ctx.side === "R" ? -180 : 180) * p;
     const tx = ctx.txFrom + (ctx.txTo - ctx.txFrom) * p;
-    this.leafEl.style.transform = "rotateY(" + rot + "deg)";
+    this.leafF.style.transform = "rotateY(" + rot + "deg)";
+    this.leafB.style.transform = "rotateY(" + this.rotB(rot, ctx.side) + "deg)";
     this.stageEl.style.transform = "translateX(" + tx + "px)";
-    this._faceCull(Math.cos((rot * Math.PI) / 180));
-    this.curlPaint(p);
     this._p = p;
   }
 
@@ -962,12 +984,10 @@ export class PassportBook {
     const finish = () => {
       if (done) return;
       done = true;
-      this.frontEl.style.visibility = "visible";
-      this.backEl.style.visibility = "visible";
-      this.leafEl.removeEventListener("transitionend", onEnd);
+      this.leafF.removeEventListener("transitionend", onEnd);
       if (commit) {
-        // No settle replay here — the landing pages must match the leaf's
-        // back face exactly so the end of the turn is seamless.
+        // No settle replay here — the landing pages must match the back
+        // sheet exactly so the end of the turn is seamless.
         this.setRest(ctx.toTurn);
         if (this.opts.sound) this.playFlip();
       } else {
@@ -976,26 +996,17 @@ export class PassportBook {
       this._ctx = null;
       this.animating = false;
     };
-    this.leafEl.addEventListener("transitionend", onEnd);
-    const track = () => {
-      if (done) return;
-      const tr = getComputedStyle(this.leafEl).transform;
-      if (tr && tr.indexOf("matrix3d") === 0) {
-        this._faceCull(parseFloat(tr.slice(9).split(",")[0]));
-      }
-      requestAnimationFrame(track);
-    };
-    requestAnimationFrame(track);
+    this.leafF.addEventListener("transitionend", onEnd);
     setTimeout(() => {
-      this.leafEl.style.transition = "transform " + dur + "ms cubic-bezier(.42,.05,.2,1)";
-      this.stageEl.style.transition = "transform " + dur + "ms cubic-bezier(.42,.05,.2,1)";
-      this.curlEl.style.transition = "opacity " + dur + "ms ease";
+      const ease = "transform " + dur + "ms cubic-bezier(.42,.05,.2,1)";
+      this.leafF.style.transition = ease;
+      this.leafB.style.transition = ease;
+      this.stageEl.style.transition = ease;
       const rot = (ctx.side === "R" ? -180 : 180) * target;
       const tx = ctx.txFrom + (ctx.txTo - ctx.txFrom) * target;
-      this.leafEl.style.transform = "rotateY(" + rot + "deg)";
+      this.leafF.style.transform = "rotateY(" + rot + "deg)";
+      this.leafB.style.transform = "rotateY(" + this.rotB(rot, ctx.side) + "deg)";
       this.stageEl.style.transform = "translateX(" + tx + "px)";
-      this.curlPaint(target ? 0.5 : 0.0001);
-      this.curlEl.style.opacity = "0";
     }, 18);
     setTimeout(finish, dur + 150);
   }
@@ -1179,7 +1190,12 @@ export class PassportBook {
       d.style.background = "radial-gradient(120% 100% at 50% 0%,#e4d6b6,#c2b29c 70%),repeating-linear-gradient(90deg,rgba(120,90,50,.06) 0 3px,transparent 3px 7px)";
       d.style.boxShadow = "inset 0 0 300px rgba(80,55,25,.4)";
     }
-    this.els.shadow.style.background = dark ? "rgba(0,0,0,.6)" : "rgba(40,26,8,.4)";
+    // Pre-faded gradient, not a solid + blur filter — live CSS blur re-renders
+    // during the open/close width transition and glitches on some GPUs.
+    const c = dark ? "0,0,0" : "40,26,8";
+    const a = dark ? 0.6 : 0.42;
+    this.els.shadow.style.background =
+      "radial-gradient(ellipse at 50% 50%, rgba(" + c + "," + a + ") 0%, rgba(" + c + "," + a * 0.8 + ") 52%, rgba(" + c + ",0) 76%)";
   }
 
   // ---------- scaling ----------
