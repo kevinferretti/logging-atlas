@@ -10,6 +10,7 @@ const SELECT = {
   id: true,
   countryId: true,
   category: true,
+  wishlist: true,
   title: true,
   by: true,
   note: true,
@@ -24,6 +25,7 @@ type Row = {
   id: string;
   countryId: string;
   category: string;
+  wishlist: boolean;
   title: string;
   by: string;
   note: string;
@@ -68,6 +70,7 @@ export async function POST(req: Request) {
   // current catalog ids.
   const countryId = resolveCountryId(String(form.get("countryId") ?? ""));
   const category = String(form.get("category") ?? "");
+  const wishlist = form.get("wishlist") === "1";
   const title = String(form.get("title") ?? "").trim();
   const link = normalizeLink(String(form.get("link") ?? ""));
 
@@ -102,6 +105,7 @@ export async function POST(req: Request) {
       userId: user.id,
       countryId,
       category,
+      wishlist,
       title: title.slice(0, 200),
       link,
       year,

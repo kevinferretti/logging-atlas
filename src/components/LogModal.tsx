@@ -7,13 +7,16 @@ import { COUNTRY_CATALOG_SORTED } from "@/lib/countries";
 import type { CategoryKey, NewEntryInput } from "@/lib/types";
 
 interface LogModalProps {
+  /** Preselect this country (set when the modal opens from a map click). */
+  initialCountryId?: string | null;
   onClose: () => void;
   onSave: (input: NewEntryInput, file?: File | null) => Promise<void>;
 }
 
-export default function LogModal({ onClose, onSave }: LogModalProps) {
-  const [countryId, setCountryId] = useState(COUNTRY_CATALOG_SORTED[0]?.id ?? "");
+export default function LogModal({ initialCountryId, onClose, onSave }: LogModalProps) {
+  const [countryId, setCountryId] = useState(initialCountryId ?? COUNTRY_CATALOG_SORTED[0]?.id ?? "");
   const [category, setCategory] = useState<CategoryKey>("recipe");
+  const [wishlist, setWishlist] = useState(false);
   const [title, setTitle] = useState("");
   const [link, setLink] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -26,7 +29,7 @@ export default function LogModal({ onClose, onSave }: LogModalProps) {
     setSaving(true);
     setError(null);
     try {
-      await onSave({ countryId, category, title: t, link: link.trim() }, category === "recipe" ? file : null);
+      await onSave({ countryId, category, wishlist, title: t, link: link.trim() }, category === "recipe" ? file : null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save entry.");
       setSaving(false);
@@ -45,6 +48,26 @@ export default function LogModal({ onClose, onSave }: LogModalProps) {
         <div>
           <div style={{ fontFamily: "Marcellus,serif", fontSize: 24, color: "var(--ink)" }}>Log an entry</div>
         </div>
+
+        <div style={{ display: "inline-flex", alignSelf: "flex-start", border: "1px solid var(--line)", borderRadius: 2, overflow: "hidden" }}>
+          {([["✓ Logged", false], ["☆ Wish list", true]] as [string, boolean][]).map(([label, wish]) => {
+            const on = wishlist === wish;
+            return (
+              <button
+                key={label}
+                onClick={() => setWishlist(wish)}
+                style={{ border: "none", padding: "7px 13px", cursor: "pointer", fontFamily: "'Special Elite',monospace", fontSize: 10, letterSpacing: 1, textTransform: "uppercase", background: on ? "var(--ink)" : "transparent", color: on ? "var(--paper)" : "var(--ink-soft)", transition: "all .15s ease" }}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+        {wishlist && (
+          <div style={{ marginTop: -6, fontFamily: "'EB Garamond',serif", fontStyle: "italic", fontSize: 13.5, color: "var(--ink-soft)" }}>
+            Something you want to do or make — it won&apos;t color the map until you log it for real.
+          </div>
+        )}
 
         <label style={labelStyle}>
           Country
@@ -92,7 +115,7 @@ export default function LogModal({ onClose, onSave }: LogModalProps) {
             disabled={saving || !title.trim()}
             style={{ background: "var(--sepia)", color: "var(--paper)", border: "none", borderRadius: 2, padding: "11px 20px", cursor: saving || !title.trim() ? "default" : "pointer", opacity: saving || !title.trim() ? 0.6 : 1, fontFamily: "'Special Elite',monospace", fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase", boxShadow: "0 2px 5px rgba(40,28,12,.25)" }}
           >
-            {saving ? "Stamping…" : "Add"}
+            {saving ? "Stamping…" : wishlist ? "Add to wish list" : "Add"}
           </button>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Special Elite',monospace", fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase", color: "var(--ink-soft)" }}>
             Cancel

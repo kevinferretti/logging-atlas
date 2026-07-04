@@ -4,6 +4,8 @@ export interface Entry {
   id: string;
   countryId: string;
   category: CategoryKey;
+  /** True for wish-list entries — things to do/make someday, not yet logged. */
+  wishlist: boolean;
   title: string;
   by: string;
   note: string;
@@ -22,7 +24,9 @@ export interface LoggedCountry {
   lon: number;
   lat: number;
   year: number; // earliest year logged
-  entries: Entry[];
+  entries: Entry[]; // all entries — real logs and wish-list items
+  logCount: number; // entries that are actual logs (drives map heat + tallies)
+  wishCount: number; // wish-list entries (shown alongside, never colors the map)
 }
 
 export interface SessionUser {
@@ -36,6 +40,7 @@ export interface SessionUser {
 export interface NewEntryInput {
   countryId: string;
   category: CategoryKey;
+  wishlist: boolean;
   title: string;
   link: string;
 }

@@ -22,7 +22,8 @@ export function buildCountDisc(
 ): string {
   const size = o.size ?? 48;
   const p = o.palette;
-  const total = c.entries.length;
+  // Only real logs count; a wish-list-only country shows a star instead.
+  const total = c.logCount;
   const digits = String(total).length;
 
   if (o.label) {
@@ -38,11 +39,12 @@ export function buildCountDisc(
   }
 
   const fs = digits >= 3 ? 30 : digits === 2 ? 36 : 40;
+  const glyph = total > 0 ? String(total) : "☆";
   return (
     '<svg viewBox="0 0 100 100" width="' + size + '" height="' + size +
     '" style="overflow:visible;display:block;">' +
     '<circle cx="50" cy="50" r="33" fill="' + p.paper2 + '" fill-opacity="0.86" stroke="' + p.sepia + '" stroke-opacity="0.6" stroke-width="2"/>' +
-    '<text x="50" y="50" text-anchor="middle" dominant-baseline="central" font-family="Marcellus,serif" font-size="' + fs + '" fill="' + p.ink + '">' + total + "</text>" +
+    '<text x="50" y="50" text-anchor="middle" dominant-baseline="central" font-family="Marcellus,serif" font-size="' + fs + '" fill="' + p.ink + '">' + glyph + "</text>" +
     "</svg>"
   );
 }

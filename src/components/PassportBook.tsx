@@ -64,7 +64,8 @@ export default function PassportBook({ user, countries, dark, initialCountryId, 
     const given = parts[0] || name;
     const surname = parts.length > 1 ? parts[parts.length - 1] : "";
     const mono = ((given[0] || "") + (surname[0] || given[1] || "")).toUpperCase();
-    const totalEntries = countries.reduce((n, c) => n + c.entries.length, 0);
+    // Identity-page tally counts real logs only; wishes aren't stamped yet.
+    const totalEntries = countries.reduce((n, c) => n + c.logCount, 0);
     const since = countries.length ? String(Math.min(...countries.map((c) => c.year))) : "—";
     const { no, noRaw } = holderNo(user.id);
     return {

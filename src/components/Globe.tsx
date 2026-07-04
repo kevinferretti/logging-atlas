@@ -6,12 +6,13 @@ import {
   geoNaturalEarth1,
   geoGraticule10,
   geoPath,
+  geoBounds,
   geoDistance,
   geoContains,
 } from "d3-geo";
 import { feature } from "topojson-client";
 import topoData from "world-atlas/countries-110m.json";
-import { buildCountDisc } from "@/lib/stamps";
+import { COUNTRY_CATALOG } from "@/lib/countries";
 import type { Palette } from "@/lib/palettes";
 import type { LoggedCountry } from "@/lib/types";
 
@@ -44,32 +45,48 @@ const SYNTHETIC_IDS: Record<string, string> = {
   "N. Cyprus": "n-cyprus",
 };
 
+const CAT_BY_ID = new Map(COUNTRY_CATALOG.map((c) => [c.id, c]));
+
 function hexA(hex: string, a: number): string {
   const h = hex.replace("#", "");
   const n = parseInt(h.length === 3 ? h.split("").map((x) => x + x).join("") : h, 16);
   return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")";
 }
 
+/** Linear blend between two 6-digit hex colours, t in [0,1]. */
+function mixHex(a: string, b: string, t: number): string {
+  const pa = parseInt(a.slice(1), 16);
+  const pb = parseInt(b.slice(1), 16);
+  const ch = (sh: number) => {
+    const va = (pa >> sh) & 255;
+    return Math.round(va + (((pb >> sh) & 255) - va) * t);
+  };
+  return "rgb(" + ch(16) + "," + ch(8) + "," + ch(0) + ")";
+}
+
 /**
  * Imperative globe/map renderer, ported from the Atlas design export. Owns a
- * canvas (the projected earth), an HTML marker layer (the postmark stamps), and
- * the pointer interactions (drag to spin, scroll to zoom, click to open).
+ * canvas (the projected earth), a tooltip, and the pointer interactions (drag
+ * to spin, scroll to zoom, hover for the country's tally, click to open).
+ * Every catalog country is hit-testable; log counts shade the land like a
+ * heat map. No markers are drawn on the land itself.
  */
 class GlobeEngine {
   stage: HTMLDivElement;
   canvas: HTMLCanvasElement;
-  markers: HTMLDivElement;
   tooltip: HTMLDivElement;
   onSelect: (id: string) => void;
 
-  countries: LoggedCountry[] = [];
   palette: Palette;
   mode: GlobeMode = "globe";
   paused = false;
 
-  loggedSet = new Set<string>();
+  counts = new Map<string, { logs: number; wishes: number }>();
+  maxLogs = 0;
+  heatCache = new Map<number, string>();
   features: any[] = [];
   featById: Record<string, any> = {};
+  boundsById: Record<string, [[number, number], [number, number]]> = {};
   graticule: any;
   projOrtho: any;
   projFlat: any;
@@ -81,6 +98,9 @@ class GlobeEngine {
 
   raf = 0;
   ro: ResizeObserver | null = null;
+  // Detaches all stage listeners on destroy — React StrictMode double-mounts
+  // in dev, and a zombie engine's listeners would keep firing onSelect.
+  ac = new AbortController();
   drag: { x: number; y: number; rot: [number, number, number] } | null = null;
   dragMoved = 0;
   lastX = 0;
@@ -90,13 +110,11 @@ class GlobeEngine {
   flyTarget: [number, number, number] = [0, 0, 0];
   hoveredId: string | null = null;
   tipXY: [number, number] = [0, 0];
-  markerEls: Record<string, HTMLDivElement> = {};
   openTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(opts: {
     stage: HTMLDivElement;
     canvas: HTMLCanvasElement;
-    markers: HTMLDivElement;
     tooltip: HTMLDivElement;
     palette: Palette;
     mode: GlobeMode;
@@ -104,7 +122,6 @@ class GlobeEngine {
   }) {
     this.stage = opts.stage;
     this.canvas = opts.canvas;
-    this.markers = opts.markers;
     this.tooltip = opts.tooltip;
     this.palette = opts.palette;
     this.mode = opts.mode;
@@ -119,16 +136,18 @@ class GlobeEngine {
     const fc: any = feature(topoData, (topoData as any).objects.countries);
     this.features = fc.features;
     this.featById = {};
+    this.boundsById = {};
     this.features.forEach((f) => {
       if (f.id == null) f.id = SYNTHETIC_IDS[f.properties?.name] ?? "";
-      this.featById[normId(f.id)] = f;
+      const id = normId(f.id);
+      this.featById[id] = f;
+      this.boundsById[id] = geoBounds(f);
     });
     this.graticule = geoGraticule10();
     this.projOrtho = geoOrthographic().rotate([-12, -18, 0]).precision(0.4);
     this.projFlat = geoNaturalEarth1().precision(0.4);
     this.projection = this.mode === "globe" ? this.projOrtho : this.projFlat;
     this.setupCanvas();
-    this.buildMarkers();
     this.attachInteractions();
     this.startLoop();
   }
@@ -137,23 +156,23 @@ class GlobeEngine {
     if (this.raf) cancelAnimationFrame(this.raf);
     if (this.ro) this.ro.disconnect();
     if (this.openTimer) clearTimeout(this.openTimer);
+    this.ac.abort();
   }
 
   setData(countries: LoggedCountry[]) {
-    this.countries = countries;
-    this.loggedSet = new Set(countries.map((c) => c.id));
-    if (this.features.length) {
-      this.buildMarkers();
-      this.draw();
-      this.positionMarkers();
+    this.counts = new Map();
+    this.maxLogs = 0;
+    for (const c of countries) {
+      this.counts.set(c.id, { logs: c.logCount, wishes: c.wishCount });
+      if (c.logCount > this.maxLogs) this.maxLogs = c.logCount;
     }
+    this.heatCache.clear();
+    if (this.features.length) this.draw();
   }
   setPalette(p: Palette) {
     this.palette = p;
-    if (this.features.length) {
-      this.buildMarkers();
-      this.draw();
-    }
+    this.heatCache.clear();
+    if (this.features.length) this.draw();
   }
   pause() {
     this.paused = true;
@@ -163,7 +182,6 @@ class GlobeEngine {
     if (this.features.length) {
       this.fitProjection();
       this.draw();
-      this.positionMarkers();
     }
   }
 
@@ -186,10 +204,7 @@ class GlobeEngine {
       this.minScale = base * 0.72;
       this.maxScale = base * 2.6;
       this.fitProjection();
-      if (this.features.length) {
-        this.draw();
-        this.positionMarkers();
-      }
+      if (this.features.length) this.draw();
     };
     measure();
     this.ro = new ResizeObserver(measure);
@@ -216,7 +231,6 @@ class GlobeEngine {
         }
       }
       this.draw();
-      this.positionMarkers();
     };
     loop();
   }
@@ -233,9 +247,21 @@ class GlobeEngine {
     this.projOrtho.rotate([nx, ny, 0]);
     if (Math.abs(dx) < 0.4 && Math.abs(ny - t[1]) < 0.4) this.flying = false;
   }
-  flyTo(c: LoggedCountry) {
-    this.flyTarget = [-c.lon, -c.lat, 0];
-    this.flying = true;
+
+  /**
+   * Fill colour for a country with `logs` real logs: a steady per-log ramp
+   * from landLogged (one log) toward landHot. The scale tops out at 8 logs
+   * until some country passes that, after which it stretches so the most-
+   * logged country always sits at the hot end.
+   */
+  heatColor(logs: number): string {
+    const cached = this.heatCache.get(logs);
+    if (cached) return cached;
+    const denom = Math.max(8, this.maxLogs);
+    const t = denom > 1 ? Math.min(1, (logs - 1) / (denom - 1)) : 1;
+    const col = mixHex(this.pal.landLogged, this.pal.landHot, t);
+    this.heatCache.set(logs, col);
+    return col;
   }
 
   draw() {
@@ -271,10 +297,11 @@ class GlobeEngine {
     for (const f of this.features) {
       ctx.beginPath();
       path(f);
-      const logged = this.loggedSet.has(normId(f.id));
-      ctx.fillStyle = logged ? pal.landLogged : pal.land;
+      const rec = this.counts.get(normId(f.id));
+      const logs = rec ? rec.logs : 0;
+      ctx.fillStyle = logs > 0 ? this.heatColor(logs) : pal.land;
       ctx.fill();
-      ctx.lineWidth = logged ? 0.7 : 0.35;
+      ctx.lineWidth = logs > 0 ? 0.7 : 0.35;
       ctx.strokeStyle = pal.coast;
       ctx.stroke();
     }
@@ -308,88 +335,57 @@ class GlobeEngine {
     ctx.stroke();
   }
 
-  screenPos(c: LoggedCountry): [number, number] | null {
-    const pt: [number, number] = [c.lon, c.lat];
+  screenPos(lonlat: [number, number]): [number, number] | null {
     if (this.mode === "globe") {
       const r = this.projOrtho.rotate();
       const center: [number, number] = [-r[0], -r[1]];
-      if (geoDistance(pt, center) > Math.PI / 2) return null;
+      if (geoDistance(lonlat, center) > Math.PI / 2) return null;
     }
-    const p = this.projection(pt);
+    const p = this.projection(lonlat);
     if (!p || isNaN(p[0])) return null;
     return p;
   }
 
-  buildMarkers() {
-    const layer = this.markers;
-    layer.innerHTML = "";
-    this.markerEls = {};
-    const sz = this.mode === "globe" ? 52 : 46;
-    for (const c of this.countries) {
-      const el = document.createElement("div");
-      el.style.cssText =
-        "position:absolute;left:0;top:0;will-change:transform,opacity;filter:drop-shadow(0 2px 3px rgba(40,28,12,.4));";
-      el.innerHTML = buildCountDisc(c, { size: sz, palette: this.palette });
-      layer.appendChild(el);
-      this.markerEls[c.id] = el;
-    }
-    this.positionMarkers();
-  }
-
-  positionMarkers() {
-    if (!this.markerEls) return;
-    const isGlobe = this.mode === "globe";
-    const rot = isGlobe ? this.projOrtho.rotate() : null;
-    const center: [number, number] | null = rot ? [-rot[0], -rot[1]] : null;
-    for (const c of this.countries) {
-      const el = this.markerEls[c.id];
-      if (!el) continue;
-      const sp = this.screenPos(c);
-      if (!sp) {
-        el.style.display = "none";
-        continue;
+  /** Catalog id of the country under the pointer, or null over open ocean. */
+  hitId(x: number, y: number): string | null {
+    const inv = this.projection.invert && this.projection.invert([x, y]);
+    if (inv && !isNaN(inv[0])) {
+      const [lon, lat] = inv;
+      // Points outside the projected earth invert to out-of-range coords.
+      if (lon >= -180 && lon <= 180 && lat >= -90 && lat <= 90) {
+        for (const f of this.features) {
+          const id = normId(f.id);
+          const b = this.boundsById[id];
+          if (!b) continue;
+          if (lat < b[0][1] || lat > b[1][1]) continue;
+          const west = b[0][0];
+          const east = b[1][0];
+          // Bounds crossing the antimeridian come back with west > east.
+          const inLon = west <= east ? lon >= west && lon <= east : lon >= west || lon <= east;
+          if (!inLon) continue;
+          if (geoContains(f, inv) && CAT_BY_ID.has(id)) return id;
+        }
       }
-      el.style.display = "";
-      let sc = 1;
-      let op = 1;
-      if (isGlobe && center) {
-        const dd = geoDistance([c.lon, c.lat], center);
-        const f = Math.cos(dd);
-        sc = 0.7 + 0.3 * f;
-        op = Math.max(0, Math.min(1, (f - 0.04) * 2.4));
-      }
-      if (this.hoveredId === c.id) sc *= 1.2;
-      el.style.transform =
-        "translate(" + sp[0].toFixed(1) + "px," + sp[1].toFixed(1) + "px) translate(-50%,-50%) scale(" + sc.toFixed(3) + ")";
-      el.style.opacity = op.toFixed(2);
-      el.style.zIndex = String(Math.round(sc * 100));
     }
-  }
-
-  hitCountry(x: number, y: number): LoggedCountry | null {
-    let best: LoggedCountry | null = null;
+    // Tiny islands are near-impossible to hit at 110m — snap to the nearest
+    // catalog label point when the pointer is only just off the polygon.
+    let best: string | null = null;
     let bd = 1e9;
-    for (const c of this.countries) {
-      const sp = this.screenPos(c);
+    for (const c of COUNTRY_CATALOG) {
+      const sp = this.screenPos([c.lon, c.lat]);
       if (!sp) continue;
       const d = Math.hypot(sp[0] - x, sp[1] - y);
       if (d < bd) {
         bd = d;
-        best = c;
+        best = c.id;
       }
     }
-    if (best && bd < (this.mode === "globe" ? 24 : 20)) return best;
-    const inv = this.projection.invert && this.projection.invert([x, y]);
-    if (!inv || isNaN(inv[0])) return null;
-    for (const c of this.countries) {
-      const f = this.featById[c.id];
-      if (f && geoContains(f, inv)) return c;
-    }
-    return null;
+    return bd < 10 ? best : null;
   }
 
   attachInteractions() {
     const el = this.stage;
+    const sig = { signal: this.ac.signal };
     el.style.touchAction = "none";
     const rel = (e: PointerEvent): [number, number] => {
       const r = el.getBoundingClientRect();
@@ -405,7 +401,7 @@ class GlobeEngine {
       this.flying = false;
       if (el.setPointerCapture) el.setPointerCapture(e.pointerId);
       el.style.cursor = "grabbing";
-    });
+    }, sig);
     el.addEventListener("pointermove", (e) => {
       const [x, y] = rel(e);
       if (this.drag) {
@@ -423,7 +419,7 @@ class GlobeEngine {
         this.tipXY = [x, y];
         this.updateHover(x, y);
       }
-    });
+    }, sig);
     const up = (e: PointerEvent) => {
       if (this.drag) {
         const moved = this.dragMoved;
@@ -432,20 +428,20 @@ class GlobeEngine {
         this.autoPause = false;
         if (moved < 6) {
           const [x, y] = rel(e);
-          const c = this.hitCountry(x, y);
-          if (c) this.clickCountry(c);
+          const id = this.hitId(x, y);
+          if (id) this.clickCountry(id);
         }
       }
     };
-    el.addEventListener("pointerup", up);
+    el.addEventListener("pointerup", up, sig);
     el.addEventListener("pointercancel", () => {
       this.drag = null;
       el.style.cursor = "grab";
       this.autoPause = false;
-    });
+    }, sig);
     el.addEventListener("pointerleave", () => {
       this.updateHover(-999, -999);
-    });
+    }, sig);
     el.addEventListener(
       "wheel",
       (e) => {
@@ -455,62 +451,72 @@ class GlobeEngine {
         const ns = Math.max(this.minScale, Math.min(this.maxScale, s * (e.deltaY < 0 ? 1.08 : 0.925)));
         this.projOrtho.scale(ns);
       },
-      { passive: false },
+      { passive: false, signal: this.ac.signal },
     );
   }
 
   updateHover(x: number, y: number) {
-    const c = this.hitCountry(x, y);
-    const id = c ? c.id : null;
-    this.stage.style.cursor = this.drag ? "grabbing" : c ? "pointer" : "grab";
+    const id = this.hitId(x, y);
+    this.stage.style.cursor = this.drag ? "grabbing" : id ? "pointer" : "grab";
     this.hoveredId = id;
-    this.updateTooltip(c);
+    this.updateTooltip(id);
   }
-  updateTooltip(c: LoggedCountry | null) {
+  updateTooltip(id: string | null) {
     const t = this.tooltip;
-    if (!c) {
+    const cat = id ? CAT_BY_ID.get(id) : null;
+    if (!cat) {
       t.style.opacity = "0";
       return;
     }
+    const rec = this.counts.get(cat.id);
+    const logs = rec ? rec.logs : 0;
+    const wishes = rec ? rec.wishes : 0;
+    const parts = [logs > 0 ? logs + (logs === 1 ? " LOG" : " LOGS") : "NO LOGS YET"];
+    if (wishes > 0) parts.push("☆ " + wishes + " WISHED");
     t.innerHTML =
       '<div style="font-family:Marcellus,serif;font-size:15px;color:var(--ink);">' +
-      esc(c.name) +
+      esc(cat.name) +
       '</div><div style="font-family:Special Elite,monospace;font-size:9.5px;letter-spacing:1.2px;color:var(--ink-soft);margin-top:2px;">' +
-      c.entries.length +
-      " ENTRIES · " +
-      esc(c.region.toUpperCase()) +
+      parts.join(" · ") +
       "</div>";
     const xy = this.tipXY;
-    t.style.transform = "translate(" + (xy[0] + 16) + "px," + (xy[1] + 16) + "px)";
+    // Flip to the other side of the cursor when the tip would leave the stage.
+    let tx = xy[0] + 16;
+    let ty = xy[1] + 16;
+    if (this.size) {
+      if (tx + t.offsetWidth > this.size.w - 8) tx = Math.max(8, xy[0] - 16 - t.offsetWidth);
+      if (ty + t.offsetHeight > this.size.h - 8) ty = Math.max(8, xy[1] - 16 - t.offsetHeight);
+    }
+    t.style.transform = "translate(" + tx + "px," + ty + "px)";
     t.style.opacity = "1";
   }
 
-  clickCountry(c: LoggedCountry) {
+  clickCountry(id: string) {
     this.hoveredId = null;
     this.updateTooltip(null);
-    if (this.mode === "globe") {
-      this.flyTo(c);
-      this.openTimer = setTimeout(() => this.onSelect(c.id), 360);
+    const cat = CAT_BY_ID.get(id);
+    if (this.mode === "globe" && cat) {
+      this.flyTarget = [-cat.lon, -cat.lat, 0];
+      this.flying = true;
+      this.openTimer = setTimeout(() => this.onSelect(id), 360);
     } else {
-      this.onSelect(c.id);
+      this.onSelect(id);
     }
   }
 
   setMode(m: GlobeMode) {
     if (m === this.mode) return;
     const cv = this.canvas;
-    const layer = this.markers;
     cv.style.opacity = "0";
-    layer.style.opacity = "0";
     this.mode = m;
+    // The pointer's old position means nothing under the other projection.
+    this.hoveredId = null;
+    this.updateTooltip(null);
     setTimeout(() => {
       this.projection = m === "globe" ? this.projOrtho : this.projFlat;
       this.fitProjection();
-      this.buildMarkers();
       this.draw();
-      this.positionMarkers();
       cv.style.opacity = "1";
-      layer.style.opacity = "1";
     }, 170);
   }
 }
@@ -522,7 +528,6 @@ function esc(s: string): string {
 export default function Globe({ countries, palette, mode, active, onSelect }: GlobeProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const markersRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<GlobeEngine | null>(null);
   const onSelectRef = useRef(onSelect);
@@ -530,11 +535,10 @@ export default function Globe({ countries, palette, mode, active, onSelect }: Gl
 
   // Mount once: build the engine and start the render loop.
   useEffect(() => {
-    if (!stageRef.current || !canvasRef.current || !markersRef.current || !tooltipRef.current) return;
+    if (!stageRef.current || !canvasRef.current || !tooltipRef.current) return;
     const engine = new GlobeEngine({
       stage: stageRef.current,
       canvas: canvasRef.current,
-      markers: markersRef.current,
       tooltip: tooltipRef.current,
       palette,
       mode,
@@ -577,7 +581,6 @@ export default function Globe({ countries, palette, mode, active, onSelect }: Gl
         ref={canvasRef}
         style={{ position: "absolute", inset: 0, zIndex: 1, display: "block", width: "100%", height: "100%", transition: "opacity .25s ease" }}
       />
-      <div ref={markersRef} style={{ position: "absolute", inset: 0, zIndex: 3, pointerEvents: "none", transition: "opacity .25s ease" }} />
       <div
         ref={tooltipRef}
         style={{

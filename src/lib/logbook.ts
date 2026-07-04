@@ -16,7 +16,9 @@ export function assembleCountries(entries: Entry[]): LoggedCountry[] {
   for (const [countryId, list] of byCountry) {
     const cat = catalogCountry(countryId);
     if (!cat) continue; // unknown country id — skip rather than crash
-    const year = list.reduce((min, e) => Math.min(min, e.year), Infinity);
+    const logs = list.filter((e) => !e.wishlist);
+    // "First logged" reflects real logs only; wish years are aspirational.
+    const year = logs.reduce((min, e) => Math.min(min, e.year), Infinity);
     result.push({
       id: cat.id,
       name: cat.name,
@@ -25,6 +27,8 @@ export function assembleCountries(entries: Entry[]): LoggedCountry[] {
       lat: cat.lat,
       year: Number.isFinite(year) ? year : new Date().getFullYear(),
       entries: list,
+      logCount: logs.length,
+      wishCount: list.length - logs.length,
     });
   }
   return result;

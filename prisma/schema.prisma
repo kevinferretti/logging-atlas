@@ -33,6 +33,10 @@ model Entry {
   userId    String
   countryId String // world-atlas numeric country id, e.g. "392" for Japan
   category  String // recipe | book | movie | music | place
+  // Wish-list entries are things the user wants to do/make. They live in the
+  // same table but don't count as logs: the map doesn't color for them and
+  // they're tallied separately everywhere.
+  wishlist  Boolean  @default(false)
   title     String
   by        String   @default("")
   note      String   @default("")

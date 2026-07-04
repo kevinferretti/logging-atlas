@@ -6,9 +6,10 @@ const prisma = new PrismaClient();
 const DEMO_EMAIL = "demo@atlas.app";
 const DEMO_PASSWORD = "password";
 
-// [countryId, entries[]] where each entry is [category, title, by, year, note].
+// [countryId, entries[]] where each entry is [category, title, by, year, note]
+// with an optional trailing "wish" marker for wish-list entries.
 // Lifted verbatim from the Atlas design export so the demo account opens populated.
-type RawEntry = [string, string, string, number, string];
+type RawEntry = [string, string, string, number, string, "wish"?];
 const SEED: Array<[string, RawEntry[]]> = [
   ["231", [
     ["recipe", "Doro Wat", "", 2019, "Berbere chicken, the long-simmer kind"],
@@ -57,6 +58,8 @@ const SEED: Array<[string, RawEntry[]]> = [
     ["music", "Hosono House", "Haruomi Hosono", 2018, ""],
     ["place", "Fushimi Inari", "", 2015, "Ten thousand vermilion gates"],
     ["place", "Naoshima", "", 2019, "The art island"],
+    ["recipe", "Ramen from scratch", "", 2024, "Tare, broth, noodles — the whole thing", "wish"],
+    ["place", "Kumano Kodō", "", 2024, "", "wish"],
   ]],
   ["380", [
     ["recipe", "Cacio e Pepe", "", 2014, ""],
@@ -89,6 +92,7 @@ const SEED: Array<[string, RawEntry[]]> = [
     ["music", "Colours", "Maâlem Mahmoud Guinia", 2021, "Gnawa trance"],
     ["place", "Fès el Bali", "", 2020, "The medina maze"],
     ["place", "Erg Chebbi", "", 2021, "Sahara dunes"],
+    ["recipe", "B'stilla", "", 2024, "Pigeon pie, someday", "wish"],
   ]],
   ["250", [
     ["recipe", "Coq au Vin", "", 2013, ""],
@@ -133,6 +137,11 @@ const SEED: Array<[string, RawEntry[]]> = [
     ["movie", "The Milk of Sorrow", "", 2023, ""],
     ["place", "Machu Picchu", "", 2023, "Up before dawn for the gate"],
   ]],
+  // Wish-list-only country: stays uncolored on the map, ☆ tallies only.
+  ["554", [
+    ["place", "Milford Track", "", 2024, "", "wish"],
+    ["movie", "Hunt for the Wilderpeople", "Taika Waititi", 2024, "", "wish"],
+  ]],
 ];
 
 async function main() {
@@ -148,10 +157,11 @@ async function main() {
   await prisma.entry.deleteMany({ where: { userId: user.id } });
 
   const data = SEED.flatMap(([countryId, entries]) =>
-    entries.map(([category, title, by, year, note]) => ({
+    entries.map(([category, title, by, year, note, wish]) => ({
       userId: user.id,
       countryId,
       category,
+      wishlist: wish === "wish",
       title,
       by,
       year,

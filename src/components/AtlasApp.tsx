@@ -33,12 +33,17 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
   const [indexOrder, setIndexOrder] = useState<IndexOrder>("entries");
   const [paletteName, setPaletteName] = useState<PaletteName>(coercePaletteName(user.theme));
   const [logOpen, setLogOpen] = useState(false);
+  // Country preselected in the log modal (set when clicking an empty country).
+  const [logCountryId, setLogCountryId] = useState<string | null>(null);
 
   const globeMode: GlobeMode = tab === "map" ? "map" : "globe";
 
   const palette = useMemo(() => getPalette(paletteName), [paletteName]);
   const countries = useMemo(() => assembleCountries(entries), [entries]);
-  const ranked = useMemo(() => [...countries].sort((a, b) => b.entries.length - a.entries.length), [countries]);
+  const ranked = useMemo(
+    () => [...countries].sort((a, b) => b.logCount - a.logCount || b.wishCount - a.wishCount),
+    [countries],
+  );
   // Regions A→Z; within each, countries inherit ranked's entries-desc order.
   const byRegion = useMemo(() => {
     const groups = new Map<string, LoggedCountry[]>();
@@ -49,12 +54,24 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
     }
     return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }, [ranked]);
-  const maxEntries = ranked.length ? ranked[0].entries.length : 1;
-  const totalEntries = entries.length;
+  const maxLogs = Math.max(1, ranked.length ? ranked[0].logCount : 1);
+  const totalLogs = countries.reduce((n, c) => n + c.logCount, 0);
+  const totalWishes = countries.reduce((n, c) => n + c.wishCount, 0);
+  const loggedCountries = countries.reduce((n, c) => n + (c.logCount > 0 ? 1 : 0), 0);
 
   function openCountry(id: string) {
     setSelectedId(id);
     setView("passport");
+  }
+  // Map clicks land here: a country with entries opens its passport pages, an
+  // empty one opens the log form with that country already picked.
+  function selectFromMap(id: string) {
+    if (countries.some((c) => c.id === id)) {
+      openCountry(id);
+    } else {
+      setLogCountryId(id);
+      setLogOpen(true);
+    }
   }
   function goWorld() {
     setView("world");
@@ -64,6 +81,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
     const fd = new FormData();
     fd.append("countryId", input.countryId);
     fd.append("category", input.category);
+    fd.append("wishlist", input.wishlist ? "1" : "0");
     fd.append("title", input.title);
     fd.append("link", input.link);
     if (file) fd.append("file", file);
@@ -126,7 +144,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
         palette={palette}
         mode={globeMode}
         active={view === "world" && tab !== "index"}
-        onSelect={openCountry}
+        onSelect={selectFromMap}
       />
 
       {/* Top bar */}
@@ -134,7 +152,10 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
         <div style={{ pointerEvents: "auto" }}>
           <div style={{ fontFamily: "Marcellus,serif", fontSize: 25, letterSpacing: 7, color: "var(--ink)" }}>ATLAS</div>
           <button
-            onClick={() => setLogOpen(true)}
+            onClick={() => {
+              setLogCountryId(null);
+              setLogOpen(true);
+            }}
             style={{
               marginTop: 10,
               display: "inline-flex",
@@ -156,9 +177,11 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
           </button>
         </div>
         <div style={{ pointerEvents: "auto", display: "flex", gap: 22, alignItems: "flex-start", textAlign: "right" }}>
-          <Stat value={countries.length} label="COUNTRIES" />
+          <Stat value={loggedCountries} label="COUNTRIES" />
           <div style={{ width: 1, alignSelf: "stretch", background: "var(--line)" }} />
-          <Stat value={totalEntries} label="ENTRIES" />
+          <Stat value={totalLogs} label="LOGS" />
+          <div style={{ width: 1, alignSelf: "stretch", background: "var(--line)" }} />
+          <Stat value={totalWishes} label="WISHED" />
           <div style={{ width: 1, alignSelf: "stretch", background: "var(--line)" }} />
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
             <div style={{ fontFamily: "'EB Garamond',serif", fontSize: 14, color: "var(--ink)" }}>{user.name ?? user.email}</div>
@@ -243,7 +266,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
             ) : indexOrder === "entries" ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {ranked.map((c) => (
-                  <IndexRow key={c.id} country={c} palette={palette} maxEntries={maxEntries} showRegion onOpen={openCountry} />
+                  <IndexRow key={c.id} country={c} palette={palette} maxLogs={maxLogs} showRegion onOpen={openCountry} />
                 ))}
               </div>
             ) : (
@@ -258,7 +281,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                       {list.map((c) => (
-                        <IndexRow key={c.id} country={c} palette={palette} maxEntries={maxEntries} showRegion={false} onOpen={openCountry} />
+                        <IndexRow key={c.id} country={c} palette={palette} maxLogs={maxLogs} showRegion={false} onOpen={openCountry} />
                       ))}
                     </div>
                   </div>
@@ -272,7 +295,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
       {/* Hint (globe/map only) */}
       {tab !== "index" && (
         <div style={{ position: "absolute", bottom: 22, left: "50%", transform: "translate(-50%,0)", zIndex: 5, fontFamily: "'Special Elite',monospace", fontSize: 10, letterSpacing: 1.6, color: "var(--ink-soft)", opacity: 0.72, pointerEvents: "none", whiteSpace: "nowrap" }}>
-          DRAG TO SPIN&nbsp;&nbsp;·&nbsp;&nbsp;SCROLL TO ZOOM&nbsp;&nbsp;·&nbsp;&nbsp;CLICK A COUNTRY TO OPEN ITS PASSPORT
+          DRAG TO SPIN&nbsp;&nbsp;·&nbsp;&nbsp;SCROLL TO ZOOM&nbsp;&nbsp;·&nbsp;&nbsp;CLICK ANY COUNTRY TO OPEN IT
         </div>
       )}
 
@@ -301,6 +324,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
       {/* GLOBAL LOG MODAL */}
       {logOpen && (
         <LogModal
+          initialCountryId={logCountryId}
           onClose={() => setLogOpen(false)}
           onSave={async (input, file) => {
             await addEntry(input, file);
@@ -316,16 +340,19 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
 function IndexRow({
   country: c,
   palette,
-  maxEntries,
+  maxLogs,
   showRegion,
   onOpen,
 }: {
   country: LoggedCountry;
   palette: Palette;
-  maxEntries: number;
+  maxLogs: number;
   showRegion: boolean;
   onOpen: (id: string) => void;
 }) {
+  const meta = [c.wishCount > 0 ? `☆ ${c.wishCount}` : "", showRegion ? c.region.toUpperCase() : ""]
+    .filter(Boolean)
+    .join("  ·  ");
   return (
     <button
       onClick={() => onOpen(c.id)}
@@ -337,12 +364,12 @@ function IndexRow({
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
           <div style={{ fontFamily: "Marcellus,serif", fontSize: 19, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.name}</div>
-          {showRegion && (
-            <div style={{ fontFamily: "'Special Elite',monospace", fontSize: 10.5, letterSpacing: 1, color: "var(--ink-soft)", flex: "0 0 auto" }}>{c.region.toUpperCase()}</div>
+          {meta && (
+            <div style={{ fontFamily: "'Special Elite',monospace", fontSize: 10.5, letterSpacing: 1, color: "var(--ink-soft)", flex: "0 0 auto" }}>{meta}</div>
           )}
         </div>
         <div style={{ height: 5, background: "var(--line)", borderRadius: 3, marginTop: 8, overflow: "hidden" }}>
-          <div style={{ width: `${Math.round((c.entries.length / maxEntries) * 100)}%`, height: "100%", background: "var(--sepia)", borderRadius: 3 }} />
+          <div style={{ width: `${Math.round((c.logCount / maxLogs) * 100)}%`, height: "100%", background: "var(--sepia)", borderRadius: 3 }} />
         </div>
       </div>
     </button>
