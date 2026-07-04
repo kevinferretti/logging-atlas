@@ -16,17 +16,17 @@ interface LogModalProps {
 export default function LogModal({ initialCountryId, onClose, onSave }: LogModalProps) {
   const [countryId, setCountryId] = useState(initialCountryId ?? COUNTRY_CATALOG_SORTED[0]?.id ?? "");
   const [category, setCategory] = useState<CategoryKey>("recipe");
-  const [wishlist, setWishlist] = useState(false);
   const [title, setTitle] = useState("");
   const [link, setLink] = useState("");
   const [file, setFile] = useState<File | null>(null);
-  const [saving, setSaving] = useState(false);
+  // Which submit button is in flight — the two Add buttons share the form.
+  const [saving, setSaving] = useState<false | "log" | "wish">(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function save() {
+  async function save(wishlist: boolean) {
     const t = title.trim();
     if (!t || !countryId || saving) return;
-    setSaving(true);
+    setSaving(wishlist ? "wish" : "log");
     setError(null);
     try {
       await onSave({ countryId, category, wishlist, title: t, link: link.trim() }, category === "recipe" ? file : null);
@@ -48,26 +48,6 @@ export default function LogModal({ initialCountryId, onClose, onSave }: LogModal
         <div>
           <div style={{ fontFamily: "Marcellus,serif", fontSize: 24, color: "var(--ink)" }}>Log an entry</div>
         </div>
-
-        <div style={{ display: "inline-flex", alignSelf: "flex-start", border: "1px solid var(--line)", borderRadius: 2, overflow: "hidden" }}>
-          {([["✓ Logged", false], ["☆ Wish list", true]] as [string, boolean][]).map(([label, wish]) => {
-            const on = wishlist === wish;
-            return (
-              <button
-                key={label}
-                onClick={() => setWishlist(wish)}
-                style={{ border: "none", padding: "7px 13px", cursor: "pointer", fontFamily: "'Special Elite',monospace", fontSize: 10, letterSpacing: 1, textTransform: "uppercase", background: on ? "var(--ink)" : "transparent", color: on ? "var(--paper)" : "var(--ink-soft)", transition: "all .15s ease" }}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
-        {wishlist && (
-          <div style={{ marginTop: -6, fontFamily: "'EB Garamond',serif", fontStyle: "italic", fontSize: 13.5, color: "var(--ink-soft)" }}>
-            Something you want to do or make — it won&apos;t color the map until you log it for real.
-          </div>
-        )}
 
         <label style={labelStyle}>
           Country
@@ -98,8 +78,8 @@ export default function LogModal({ initialCountryId, onClose, onSave }: LogModal
           })}
         </div>
 
-        <input value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save()} placeholder="Name" style={inputStyle} autoFocus />
-        <input value={link} onChange={(e) => setLink(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save()} placeholder="Link (optional)" style={inputStyle} />
+        <input value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save(false)} placeholder="Name" style={inputStyle} autoFocus />
+        <input value={link} onChange={(e) => setLink(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save(false)} placeholder="Link (optional)" style={inputStyle} />
         {category === "recipe" && (
           <label style={labelStyle}>
             Recipe file (optional)
@@ -111,11 +91,19 @@ export default function LogModal({ initialCountryId, onClose, onSave }: LogModal
 
         <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 2 }}>
           <button
-            onClick={save}
-            disabled={saving || !title.trim()}
-            style={{ background: "var(--sepia)", color: "var(--paper)", border: "none", borderRadius: 2, padding: "11px 20px", cursor: saving || !title.trim() ? "default" : "pointer", opacity: saving || !title.trim() ? 0.6 : 1, fontFamily: "'Special Elite',monospace", fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase", boxShadow: "0 2px 5px rgba(40,28,12,.25)" }}
+            onClick={() => save(false)}
+            disabled={!!saving || !title.trim()}
+            style={{ background: "var(--sepia)", color: "var(--paper)", border: "1px solid var(--sepia)", borderRadius: 2, padding: "11px 18px", cursor: saving || !title.trim() ? "default" : "pointer", opacity: saving || !title.trim() ? 0.6 : 1, fontFamily: "'Special Elite',monospace", fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase", boxShadow: "0 2px 5px rgba(40,28,12,.25)" }}
           >
-            {saving ? "Stamping…" : wishlist ? "Add to wish list" : "Add"}
+            {saving === "log" ? "Stamping…" : "Add log"}
+          </button>
+          <button
+            onClick={() => save(true)}
+            disabled={!!saving || !title.trim()}
+            title="Something you want to do or make — it won't color the map until you log it for real"
+            style={{ background: "none", color: "var(--sepia)", border: "1px dashed var(--sepia)", borderRadius: 2, padding: "11px 18px", cursor: saving || !title.trim() ? "default" : "pointer", opacity: saving || !title.trim() ? 0.6 : 1, fontFamily: "'Special Elite',monospace", fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase" }}
+          >
+            {saving === "wish" ? "Stamping…" : "☆ Add to wish list"}
           </button>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Special Elite',monospace", fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase", color: "var(--ink-soft)" }}>
             Cancel
