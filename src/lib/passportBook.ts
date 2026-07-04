@@ -394,7 +394,10 @@ export class PassportBook {
         : "background:none;";
     return (
       '<div style="position:absolute;inset:0;pointer-events:none;' + this.GRAIN(0.05) + '"></div>' +
-      '<div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 78% 18%,rgba(150,110,60,.10),transparent 9%),radial-gradient(circle at 20% 70%,rgba(150,110,60,.08),transparent 7%),radial-gradient(circle at 60% 88%,rgba(150,110,60,.07),transparent 6%);"></div>' +
+      // No decorative age-stain gradients here: at alpha .07-.10 they sit at
+      // the 8-bit compositing precision floor, and GPU WebRender re-rasters
+      // them inconsistently around promoted stamp surfaces — users see faint
+      // smudges that flicker with hover and cut off at surface edges.
       '<div style="position:absolute;inset:0;pointer-events:none;' + innerShade + '"></div>' +
       '<div style="position:absolute;inset:9px;border:1px solid rgba(140,120,80,.32);border-radius:2px;pointer-events:none;"></div>'
     );
