@@ -3,13 +3,12 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Globe, { type GlobeMode } from "./Globe";
-import PassportBook from "./PassportBook";
 import LogModal from "./LogModal";
 import QuizGame from "./QuizGame";
-import { COUNTRY_CATALOG, resolveCountryId } from "@/lib/countries";
+import { COUNTRY_CATALOG } from "@/lib/countries";
 import { assembleCountries } from "@/lib/logbook";
 import { buildCountDisc } from "@/lib/stamps";
-import { coercePaletteName, getPalette, isDarkPalette, paletteCssVars, type Palette, type PaletteName } from "@/lib/palettes";
+import { coercePaletteName, getPalette, paletteCssVars, type Palette, type PaletteName } from "@/lib/palettes";
 import type { Entry, LoggedCountry, NewEntryInput, SessionUser } from "@/lib/types";
 
 interface AtlasAppProps {
@@ -28,8 +27,6 @@ for (const c of COUNTRY_CATALOG) REGION_TOTALS.set(c.region, (REGION_TOTALS.get(
 export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
   const router = useRouter();
   const [entries, setEntries] = useState<Entry[]>(initialEntries);
-  const [view, setView] = useState<"world" | "passport">("world");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("globe");
   const [indexOrder, setIndexOrder] = useState<IndexOrder>("entries");
   const [paletteName, setPaletteName] = useState<PaletteName>(coercePaletteName(user.theme));
@@ -62,10 +59,9 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
   const loggedCountries = countries.reduce((n, c) => n + (c.logCount > 0 ? 1 : 0), 0);
 
   function openCountry(id: string) {
-    setSelectedId(id);
-    setView("passport");
+    router.push(`/country/${id}`);
   }
-  // Map clicks land here: a country with entries opens its passport pages, an
+  // Map clicks land here: a country with entries opens its details page, an
   // empty one opens the log form with that country already picked.
   function selectFromMap(id: string) {
     if (countries.some((c) => c.id === id)) {
@@ -74,9 +70,6 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
       setLogCountryId(id);
       setLogOpen(true);
     }
-  }
-  function goWorld() {
-    setView("world");
   }
 
   async function addEntry(input: NewEntryInput, file?: File | null): Promise<Entry> {
@@ -95,21 +88,6 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
     const { entry } = (await res.json()) as { entry: Entry };
     setEntries((prev) => [...prev, entry]);
     return entry;
-  }
-
-  async function deleteEntry(entryId: string) {
-    const res = await fetch(`/api/entries/${entryId}`, { method: "DELETE" });
-    if (!res.ok) return;
-    setEntries((prev) => {
-      const next = prev.filter((e) => e.id !== entryId);
-      // If we just removed the last entry for the open country, return to the
-      // world. Stored ids may be legacy ones — compare in resolved form.
-      if (selectedId && !next.some((e) => resolveCountryId(e.countryId) === selectedId)) {
-        setView("world");
-        setSelectedId(null);
-      }
-      return next;
-    });
   }
 
   async function logout() {
@@ -145,7 +123,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
         countries={countries}
         palette={palette}
         mode={globeMode}
-        active={view === "world" && tab !== "index" && !quizOpen}
+        active={tab !== "index" && !quizOpen}
         onSelect={selectFromMap}
       />
 
@@ -332,18 +310,6 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
       >
         SOURCE&nbsp;↗
       </a>
-
-      {/* PASSPORT BOOK OVERLAY */}
-      {view === "passport" && selectedId && (
-        <PassportBook
-          user={user}
-          countries={countries}
-          dark={isDarkPalette(palette)}
-          initialCountryId={selectedId}
-          onClose={goWorld}
-          onDelete={deleteEntry}
-        />
-      )}
 
       {/* MAP QUIZ OVERLAY */}
       {quizOpen && <QuizGame entries={entries} palette={palette} onClose={() => setQuizOpen(false)} />}
