@@ -132,34 +132,9 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
         <div style={{ pointerEvents: "auto" }}>
           <div style={{ fontFamily: "Marcellus,serif", fontSize: 25, letterSpacing: 7, color: "var(--ink)" }}>WORLOG</div>
           <button
-            onClick={() => {
-              setLogCountryId(null);
-              setLogOpen(true);
-            }}
-            style={{
-              marginTop: 10,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 7,
-              background: "none",
-              border: "1px solid var(--sepia)",
-              borderRadius: 2,
-              padding: "7px 13px",
-              cursor: "pointer",
-              fontFamily: "'Special Elite',monospace",
-              fontSize: 10.5,
-              letterSpacing: 1,
-              textTransform: "uppercase",
-              color: "var(--sepia)",
-            }}
-          >
-            Make an entry
-          </button>
-          <button
             onClick={() => setQuizOpen(true)}
             style={{
               marginTop: 10,
-              marginLeft: 8,
               display: "inline-flex",
               alignItems: "center",
               gap: 7,

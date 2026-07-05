@@ -351,8 +351,11 @@ class GlobeEngine {
     const inv = this.projection.invert && this.projection.invert([x, y]);
     if (inv && !isNaN(inv[0])) {
       const [lon, lat] = inv;
-      // Points outside the projected earth invert to out-of-range coords.
-      if (lon >= -180 && lon <= 180 && lat >= -90 && lat <= 90) {
+      // The orthographic invert reflects points outside the globe's disc back
+      // onto the sphere, so only trust coords that project back to the pointer.
+      const rt = this.projection([lon, lat]);
+      const onEarth = !!rt && Math.hypot(rt[0] - x, rt[1] - y) < 0.5;
+      if (onEarth && lon >= -180 && lon <= 180 && lat >= -90 && lat <= 90) {
         for (const f of this.features) {
           const id = normId(f.id);
           const b = this.boundsById[id];
