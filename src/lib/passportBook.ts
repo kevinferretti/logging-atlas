@@ -125,6 +125,7 @@ export class PassportBook {
   _lay: Record<string, PlacedStamp[]> = {};
   _ro: ResizeObserver | null = null;
   _key: ((e: KeyboardEvent) => void) | null = null;
+  _curlFadeT: ReturnType<typeof setTimeout> | null = null;
   _ac: AudioContext | null = null;
 
   // DOM handles within the book. The turning page is TWO flat sibling
@@ -909,11 +910,19 @@ export class PassportBook {
     this.leafBC.innerHTML = ctx.back;
     this.leafBC.style.background = ctx.backBg || "#F3EAD6";
     // Static curl shading for the whole turn — animating it mid-flight would
-    // re-render the sheet surface every frame while the transform animates.
+    // re-render the sheet surface every frame while the transform animates
+    // (and an opacity-animating child inside a compositor-animating ancestor
+    // is the WebRender misprojection trigger). It fades out only after the
+    // sheet has landed and its ancestor is static again; see endTurn.
+    if (this._curlFadeT) {
+      clearTimeout(this._curlFadeT);
+      this._curlFadeT = null;
+    }
     const ang = ctx.side === "R" ? 120 : 60;
     const curlBg = "linear-gradient(" + ang + "deg, rgba(0,0,0,.26) 0%, rgba(0,0,0,.05) 22%, rgba(255,250,238,.24) 48%, rgba(0,0,0,.04) 74%, rgba(0,0,0,.18) 100%)";
     [this.leafF, this.leafB].forEach((l) => {
       const c = l.querySelector<HTMLElement>(".om-curl")!;
+      c.style.transition = "none";
       c.style.background = curlBg;
       c.style.opacity = "0.6";
     });
@@ -1022,6 +1031,10 @@ export class PassportBook {
       if (done) return;
       done = true;
       this.leafF.removeEventListener("transitionend", onEnd);
+      // The sheet that just landed flat: back sheet on a committed turn, the
+      // front sheet when a turn is cancelled back to rest.
+      const landed = commit ? this.leafB : this.leafF;
+      const curl = landed.querySelector<HTMLElement>(".om-curl");
       if (commit) {
         // No settle replay here — the landing pages must match the back
         // sheet exactly so the end of the turn is seamless.
@@ -1029,6 +1042,21 @@ export class PassportBook {
         if (this.opts.sound) this.playFlip();
       } else {
         this.setRest(ctx.fromTurn);
+      }
+      // The landed sheet matches the page beneath it except for the curl
+      // shading, so cutting to the bare page pops bright in one frame. Keep
+      // the sheet up for a beat and let the shading fade out — safe now
+      // because its transform transition is over, so nothing 3D-animates
+      // above the fading child. setupLeaf cancels this if a new turn starts.
+      if (curl) {
+        landed.style.display = "block";
+        curl.style.transition = "opacity 180ms ease-out";
+        curl.style.opacity = "0";
+        this._curlFadeT = setTimeout(() => {
+          this._curlFadeT = null;
+          landed.style.display = "none";
+          curl.style.transition = "none";
+        }, 230);
       }
       this._ctx = null;
       this.animating = false;
