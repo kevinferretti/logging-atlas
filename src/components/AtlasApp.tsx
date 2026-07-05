@@ -142,7 +142,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
               alignItems: "center",
               gap: 7,
               background: "none",
-              border: "1px dashed var(--sepia)",
+              border: "1px solid var(--sepia)",
               borderRadius: 2,
               padding: "7px 13px",
               cursor: "pointer",
@@ -153,7 +153,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
               color: "var(--sepia)",
             }}
           >
-            ＋ Log an entry
+            Make an entry
           </button>
           <button
             onClick={() => setQuizOpen(true)}
@@ -164,7 +164,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
               alignItems: "center",
               gap: 7,
               background: "none",
-              border: "1px dashed var(--teal)",
+              border: "1px solid var(--teal)",
               borderRadius: 2,
               padding: "7px 13px",
               cursor: "pointer",
@@ -175,7 +175,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
               color: "var(--teal)",
             }}
           >
-            ◎ Map quiz
+            Quiz
           </button>
         </div>
         <div style={{ pointerEvents: "auto", display: "flex", gap: 22, alignItems: "flex-start", textAlign: "right" }}>
