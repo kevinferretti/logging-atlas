@@ -55,7 +55,6 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
   }, [ranked]);
   const maxLogs = Math.max(1, ranked.length ? ranked[0].logCount : 1);
   const totalLogs = countries.reduce((n, c) => n + c.logCount, 0);
-  const totalWishes = countries.reduce((n, c) => n + c.wishCount, 0);
   const loggedCountries = countries.reduce((n, c) => n + (c.logCount > 0 ? 1 : 0), 0);
 
   function openCountry(id: string) {
@@ -183,8 +182,6 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
           <Stat value={loggedCountries} label="COUNTRIES" />
           <div style={{ width: 1, alignSelf: "stretch", background: "var(--line)" }} />
           <Stat value={totalLogs} label="LOGS" />
-          <div style={{ width: 1, alignSelf: "stretch", background: "var(--line)" }} />
-          <Stat value={totalWishes} label="WISHED" />
           <div style={{ width: 1, alignSelf: "stretch", background: "var(--line)" }} />
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
             <div style={{ fontFamily: "'EB Garamond',serif", fontSize: 14, color: "var(--ink)" }}>{user.name ?? user.email}</div>
