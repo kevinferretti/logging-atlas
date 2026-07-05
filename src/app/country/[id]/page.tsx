@@ -21,7 +21,7 @@ export default async function CountryDetails({
   const rows = await prisma.entry.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "asc" },
-    select: { id: true, countryId: true, category: true, wishlist: true, title: true, by: true, note: true, link: true, year: true, fileName: true, fileKey: true, fileType: true },
+    select: { id: true, countryId: true, category: true, wishlist: true, title: true, by: true, note: true, link: true, date: true, year: true, fileName: true, fileKey: true, fileType: true },
   });
   const entries: Entry[] = rows.map((r) => ({ ...r, category: r.category as CategoryKey }));
 

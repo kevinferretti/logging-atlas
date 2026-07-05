@@ -79,6 +79,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
     fd.append("wishlist", input.wishlist ? "1" : "0");
     fd.append("title", input.title);
     fd.append("link", input.link);
+    fd.append("date", input.date);
     if (file) fd.append("file", file);
     const res = await fetch("/api/entries", { method: "POST", body: fd });
     if (!res.ok) {

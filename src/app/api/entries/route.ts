@@ -15,6 +15,7 @@ const SELECT = {
   by: true,
   note: true,
   link: true,
+  date: true,
   year: true,
   fileName: true,
   fileKey: true,
@@ -30,6 +31,7 @@ type Row = {
   by: string;
   note: string;
   link: string;
+  date: string;
   year: number;
   fileName: string | null;
   fileKey: string | null;
@@ -38,6 +40,17 @@ type Row = {
 
 function toEntry(row: Row): Entry {
   return { ...row, category: row.category as CategoryKey };
+}
+
+/** True for a well-formed "yyyy-mm-dd" that is a real calendar date. */
+function isCalendarDate(s: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const d = new Date(s + "T00:00:00Z");
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
+}
+
+function localDateString(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 // GET /api/entries — all entries for the signed-in user.
@@ -84,11 +97,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Text is required." }, { status: 400 });
   }
 
+  // The picker sends the user's local calendar date; fall back to the server's
+  // when missing or malformed. `year` is derived from it so year-based
+  // grouping and stamps always agree with the picked date.
   const currentYear = new Date().getFullYear();
-  let year = Number(form.get("year"));
-  if (!Number.isInteger(year) || year < 1900 || year > currentYear + 1) {
-    year = currentYear;
+  let date = String(form.get("date") ?? "");
+  if (!isCalendarDate(date) || Number(date.slice(0, 4)) < 1900 || Number(date.slice(0, 4)) > currentYear + 1) {
+    date = localDateString(new Date());
   }
+  const year = Number(date.slice(0, 4));
 
   // Optional attachment — only stored for recipes for now.
   let fileFields: { fileName: string; fileKey: string; fileType: string } | undefined;
@@ -108,6 +125,7 @@ export async function POST(req: Request) {
       wishlist,
       title: title.slice(0, 200),
       link,
+      date,
       year,
       ...fileFields,
     },

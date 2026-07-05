@@ -41,6 +41,10 @@ model Entry {
   by        String   @default("")
   note      String   @default("")
   link      String   @default("") // optional URL associated with the entry
+  // Calendar date the entry is logged for, as "yyyy-mm-dd" (a date-only string
+  // sidesteps timezone shifts). Empty for entries that predate the field;
+  // `year` is derived from it at write time and stays the grouping field.
+  date      String   @default("")
   year      Int
   // Optional attachment (currently used for recipe uploads). The file is stored
   // on the persistent volume under UPLOAD_DIR; fileKey is its on-disk name.

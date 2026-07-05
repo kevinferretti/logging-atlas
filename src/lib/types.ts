@@ -10,6 +10,8 @@ export interface Entry {
   by: string;
   note: string;
   link: string;
+  /** Logged-for date as "yyyy-mm-dd"; "" on entries that predate the field. */
+  date: string;
   year: number;
   fileName: string | null;
   fileKey: string | null;
@@ -43,4 +45,6 @@ export interface NewEntryInput {
   wishlist: boolean;
   title: string;
   link: string;
+  /** "yyyy-mm-dd" from the date picker. */
+  date: string;
 }

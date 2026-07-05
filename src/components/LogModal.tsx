@@ -13,11 +13,19 @@ interface LogModalProps {
   onSave: (input: NewEntryInput, file?: File | null) => Promise<void>;
 }
 
+// Local calendar date — toISOString() would report yesterday/tomorrow near
+// midnight for users away from UTC.
+function todayISO(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export default function LogModal({ initialCountryId, onClose, onSave }: LogModalProps) {
   const [countryId, setCountryId] = useState(initialCountryId ?? COUNTRY_CATALOG_SORTED[0]?.id ?? "");
   const [category, setCategory] = useState<CategoryKey>("recipe");
   const [title, setTitle] = useState("");
   const [link, setLink] = useState("");
+  const [date, setDate] = useState(todayISO());
   const [file, setFile] = useState<File | null>(null);
   // Which submit button is in flight — the two Add buttons share the form.
   const [saving, setSaving] = useState<false | "log" | "wish">(false);
@@ -29,7 +37,7 @@ export default function LogModal({ initialCountryId, onClose, onSave }: LogModal
     setSaving(wishlist ? "wish" : "log");
     setError(null);
     try {
-      await onSave({ countryId, category, wishlist, title: t, link: link.trim() }, category === "recipe" ? file : null);
+      await onSave({ countryId, category, wishlist, title: t, link: link.trim(), date }, category === "recipe" ? file : null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save entry.");
       setSaving(false);
@@ -80,6 +88,10 @@ export default function LogModal({ initialCountryId, onClose, onSave }: LogModal
 
         <input value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save(false)} placeholder="Name" style={inputStyle} autoFocus />
         <input value={link} onChange={(e) => setLink(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save(false)} placeholder="Link (optional)" style={inputStyle} />
+        <label style={labelStyle}>
+          Date
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle} />
+        </label>
         {category === "recipe" && (
           <label style={labelStyle}>
             Recipe file (optional)
