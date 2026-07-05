@@ -7,7 +7,7 @@
 import { category } from "@/lib/categories";
 import { fmtCoord, subLine } from "@/lib/logbook";
 import type { Entry } from "@/lib/types";
-import { DISPLAY, MONO, SERIF, fileHref, linkHost, splitEntries, type VariantProps } from "./shared";
+import { DISPLAY, MONO, SERIF, entryDateParts, fileHref, linkHost, splitEntries, type VariantProps } from "./shared";
 
 export default function GazetteVariant({ country: c, onBack, onPassport, onAdd, onDelete }: VariantProps) {
   const { logs, wishes } = splitEntries(c);
@@ -96,9 +96,10 @@ export default function GazetteVariant({ country: c, onBack, onPassport, onAdd, 
 
 function Kicker({ e }: { e: Entry }) {
   const cat = category(e.category);
+  const d = entryDateParts(e);
   return (
     <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: 2.2, textTransform: "uppercase", color: cat?.color }}>
-      {cat?.one} · {e.year}
+      {cat?.one} · {d ? `${d.day} ${d.month} ${d.year}` : e.year}
     </div>
   );
 }

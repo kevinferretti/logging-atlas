@@ -7,7 +7,7 @@
 import { category } from "@/lib/categories";
 import { fmtCoord, subLine } from "@/lib/logbook";
 import type { Entry } from "@/lib/types";
-import { DISPLAY, MONO, SERIF, fileHref, linkHost, splitEntries, type VariantProps } from "./shared";
+import { DISPLAY, MONO, SERIF, entryDateParts, fileHref, linkHost, splitEntries, type VariantProps } from "./shared";
 
 export default function JournalVariant({ country: c, onBack, onPassport, onAdd, onDelete }: VariantProps) {
   const { logs, wishes } = splitEntries(c);
@@ -73,6 +73,8 @@ function JEntry({ e, hollow, onDelete }: { e: Entry; hollow: boolean; onDelete: 
   const cat = category(e.category);
   const sub = subLine(e);
   const file = fileHref(e);
+  // The year is already the waypoint heading, so the line shows only day+month.
+  const d = hollow ? null : entryDateParts(e);
   return (
     <div style={{ position: "relative", margin: "14px 0 22px" }}>
       <div
@@ -90,7 +92,7 @@ function JEntry({ e, hollow, onDelete }: { e: Entry; hollow: boolean; onDelete: 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
         <div style={{ minWidth: 0 }}>
           <span style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: 1.6, textTransform: "uppercase", color: cat?.color }}>
-            {hollow ? "☆ " : ""}{cat?.one}
+            {hollow ? "☆ " : ""}{cat?.one}{d ? ` · ${d.day} ${d.month}` : ""}
           </span>
           <div style={{ fontFamily: DISPLAY, fontSize: 20, lineHeight: 1.2, color: "var(--ink)", marginTop: 2, fontStyle: hollow ? "italic" : "normal" }}>{e.title}</div>
           {sub && <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 14.5, color: "var(--ink-soft)", marginTop: 2 }}>{sub}</div>}

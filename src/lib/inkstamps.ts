@@ -78,11 +78,15 @@ function rseed(seed: number, k: number): number {
 function pad(n: number): string {
   return n < 10 ? "0" + n : "" + n;
 }
-function fmtDate(rnd: (k: number) => number, year: number): string {
-  const day = 1 + Math.floor(rnd(7) * 27);
-  const mon = Math.floor(rnd(8) * 12);
+function fmtDate(rnd: (k: number) => number, entry: Entry): string {
+  // The entry's real logged date when it has one; entries that predate the
+  // date field get a fabricated day/month (seeded, so stable per stamp).
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(entry.date);
+  const year = m ? Number(m[1]) : entry.year;
+  const mon = m ? Number(m[2]) - 1 : Math.floor(rnd(8) * 12);
+  const day = m ? Number(m[3]) : 1 + Math.floor(rnd(7) * 27);
   const f = Math.floor(rnd(9) * 3);
-  const M = MONTHS[mon];
+  const M = MONTHS[mon] ?? MONTHS[0];
   if (f === 0) return pad(day) + " " + M + " " + year;
   if (f === 1) return pad(day) + "." + pad(mon + 1) + "." + year;
   return year + " " + pad(mon + 1) + " " + pad(day);
@@ -227,7 +231,7 @@ export function buildEntryStamp(entry: Entry, countryName: string, size: number,
     cat,
     title: entry.title,
     action: ACTIONS[Math.floor(rnd(3) * ACTIONS.length)],
-    date: fmtDate(rnd, entry.year),
+    date: fmtDate(rnd, entry),
     ref: "No " + (1000 + Math.floor(rnd(5) * 8999)),
     uid: "k" + uid++,
   };

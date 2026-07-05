@@ -9,9 +9,9 @@ import { countryPrefix } from "@/lib/countries";
 import { fmtCoord, subLine } from "@/lib/logbook";
 import { buildCountDisc } from "@/lib/stamps";
 import type { Entry } from "@/lib/types";
-import { DISPLAY, MONO, SERIF, fileHref, linkHost, splitEntries, type VariantProps } from "./shared";
+import { DISPLAY, MONO, SERIF, entryDateParts, fileHref, linkHost, splitEntries, type VariantProps } from "./shared";
 
-const COLS = "44px 84px 1fr 58px 150px 30px";
+const COLS = "44px 84px 1fr 92px 150px 30px";
 
 export default function LedgerVariant({ country: c, palette, onBack, onPassport, onAdd, onDelete }: VariantProps) {
   const { logs, wishes } = splitEntries(c);
@@ -42,7 +42,7 @@ export default function LedgerVariant({ country: c, palette, onBack, onPassport,
 
       {/* Column headings */}
       <div style={{ display: "grid", gridTemplateColumns: COLS, gap: 12, padding: "12px 6px 8px", borderBottom: "1.5px solid var(--ink)" }}>
-        {["No.", "Kind", "Item", "Year", "Reference", ""].map((h, i) => (
+        {["No.", "Kind", "Item", "Date", "Reference", ""].map((h, i) => (
           <div key={i} style={{ fontFamily: MONO, fontSize: 9, letterSpacing: 2, textTransform: "uppercase", color: "var(--ink-soft)" }}>{h}</div>
         ))}
       </div>
@@ -75,6 +75,7 @@ function Row({ e, no, onDelete }: { e: Entry; no: string; onDelete: (id: string)
   const cat = category(e.category);
   const sub = subLine(e);
   const file = fileHref(e);
+  const d = entryDateParts(e);
   return (
     <div style={{ display: "grid", gridTemplateColumns: COLS, gap: 12, alignItems: "baseline", padding: "13px 6px", borderBottom: e.wishlist ? "1px dashed var(--line)" : "1px solid var(--line)" }}>
       <div style={{ fontFamily: MONO, fontSize: 11, color: "var(--ink-soft)" }}>{no}</div>
@@ -88,7 +89,7 @@ function Row({ e, no, onDelete }: { e: Entry; no: string; onDelete: (id: string)
         {sub && <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 14, color: "var(--ink-soft)", marginTop: 1 }}>{sub}</div>}
         {e.note && <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 13.5, color: "var(--ink-soft)", opacity: 0.85, marginTop: 2 }}>“{e.note}”</div>}
       </div>
-      <div style={{ fontFamily: MONO, fontSize: 11.5, color: "var(--ink)" }}>{e.wishlist ? "—" : e.year}</div>
+      <div style={{ fontFamily: MONO, fontSize: 11.5, color: "var(--ink)" }}>{e.wishlist ? "—" : d ? `${d.day}.${d.monthNo}.${d.year}` : e.year}</div>
       <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
         {e.link && (
           <a href={e.link} target="_blank" rel="noreferrer noopener" style={refLink}>↗ {linkHost(e.link)}</a>
