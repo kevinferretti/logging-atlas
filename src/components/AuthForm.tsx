@@ -43,7 +43,7 @@ export default function AuthForm() {
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, background: "var(--paper)" }}>
       <div style={{ width: "100%", maxWidth: 420 }}>
         <div style={{ textAlign: "center", marginBottom: 26 }}>
-          <div style={{ fontFamily: "Marcellus,serif", fontSize: 34, letterSpacing: 9, color: "var(--ink)" }}>ATLAS</div>
+          <div style={{ fontFamily: "Marcellus,serif", fontSize: 34, letterSpacing: 9, color: "var(--ink)" }}>WORLOG</div>
         </div>
 
         <div style={{ background: "var(--paper2)", border: "1px solid var(--line)", borderRadius: 5, boxShadow: "0 18px 46px rgba(40,28,12,.18)", padding: 26 }}>
@@ -87,7 +87,7 @@ export default function AuthForm() {
               disabled={busy}
               style={{ background: "var(--sepia)", color: "var(--paper)", border: "none", borderRadius: 2, padding: "12px 20px", cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1, fontFamily: "'Special Elite',monospace", fontSize: 11.5, letterSpacing: 1.6, textTransform: "uppercase", boxShadow: "0 2px 5px rgba(40,28,12,.25)", marginTop: 4 }}
             >
-              {busy ? "Please wait…" : mode === "login" ? "Enter the atlas" : "Begin your atlas"}
+              {busy ? "Please wait…" : mode === "login" ? "Enter Worlog" : "Begin your Worlog"}
             </button>
           </form>
         </div>

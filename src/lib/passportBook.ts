@@ -432,7 +432,7 @@ export class PassportBook {
     if (back) {
       return (
         '<div style="position:absolute;inset:0;background:' + bg + ';overflow:hidden;">' + grain + sheen +
-        '<div style="position:absolute;inset:20px;border:1px solid ' + g + ';opacity:.5;border-radius:4px;"></div><div style="position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;"><div style="display:inline-flex;">' + this.crest(58, g, GOLD_LO) + '</div><div style="font-family:\'Special Elite\',monospace;font-size:9px;letter-spacing:4px;color:' + g + ';margin-top:16px;opacity:.85;">ATLAS · BUREAU OF THINGS LOGGED</div></div><div style="position:absolute;bottom:26px;left:0;right:0;text-align:center;font-family:\'Courier Prime\',monospace;font-size:8px;letter-spacing:2px;color:' + g + ';opacity:.6;">' + esc(this.holder.noRaw) + "</div></div>"
+        '<div style="position:absolute;inset:20px;border:1px solid ' + g + ';opacity:.5;border-radius:4px;"></div><div style="position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;"><div style="display:inline-flex;">' + this.crest(58, g, GOLD_LO) + '</div><div style="font-family:\'Special Elite\',monospace;font-size:9px;letter-spacing:4px;color:' + g + ';margin-top:16px;opacity:.85;">WORLOG · BUREAU OF THINGS LOGGED</div></div><div style="position:absolute;bottom:26px;left:0;right:0;text-align:center;font-family:\'Courier Prime\',monospace;font-size:8px;letter-spacing:2px;color:' + g + ';opacity:.6;">' + esc(this.holder.noRaw) + "</div></div>"
       );
     }
     const textShadow = "text-shadow:0 1px 0 rgba(0,0,0,.45),0 -1px 0 rgba(255,255,255,.10);";
@@ -446,7 +446,7 @@ export class PassportBook {
         '<div style="font-family:\'Special Elite\',monospace;font-size:10px;letter-spacing:6px;color:' + g + ";" + textShadow + '">✦ PASSEPORT ✦</div>' +
         '<div style="height:1px;width:120px;background:' + g + ';margin:14px 0 22px;opacity:.7;"></div>' +
         '<div style="position:relative;display:inline-flex;padding:14px;"><div style="position:absolute;inset:0;border:1px solid ' + g + ';border-radius:50%;opacity:.55;"></div>' + this.crest(120, g, GOLD_LO) + "</div>" +
-        '<div style="margin-top:30px;border-top:1px solid ' + g + ";border-bottom:1px solid " + g + ';padding:9px 30px;"><div style="font-family:\'Marcellus SC\',\'Marcellus\',serif;font-size:48px;letter-spacing:11px;color:' + g + ";line-height:1;" + textShadow + '">ATLAS</div></div>' +
+        '<div style="margin-top:30px;border-top:1px solid ' + g + ";border-bottom:1px solid " + g + ';padding:9px 30px;"><div style="font-family:\'Marcellus SC\',\'Marcellus\',serif;font-size:48px;letter-spacing:11px;color:' + g + ";line-height:1;" + textShadow + '">WORLOG</div></div>' +
         '<div style="margin-top:18px;font-family:\'Special Elite\',monospace;font-size:10px;letter-spacing:4px;color:' + g + ";opacity:.92;" + textShadow + '">PASSPORT OF THINGS LOGGED</div>' +
         '<div style="flex:1;"></div></div>' +
         '<div style="position:absolute;bottom:30px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:9px;color:' + g + ';"><div style="display:inline-flex;">' + this.chip(30, g) + '</div><span style="font-family:\'Special Elite\',monospace;font-size:8.5px;letter-spacing:3px;opacity:.8;">BIOMETRIC</span></div>' +
@@ -461,7 +461,7 @@ export class PassportBook {
         '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;padding:84px 44px 0;">' +
         '<div style="display:inline-flex;opacity:.92;">' + this.crest(78, g, GOLD_LO) + "</div>" +
         '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;">' +
-        '<div style="font-family:\'Marcellus\',serif;font-size:54px;letter-spacing:15px;color:' + g + ";line-height:1;" + emboss + ';padding-left:15px;">ATLAS</div>' +
+        '<div style="font-family:\'Marcellus\',serif;font-size:54px;letter-spacing:15px;color:' + g + ";line-height:1;" + emboss + ';padding-left:15px;">WORLOG</div>' +
         '<div style="margin-top:22px;width:54px;height:1px;background:' + g + ';opacity:.6;"></div>' +
         '<div style="margin-top:22px;font-family:\'Special Elite\',monospace;font-size:9px;letter-spacing:5px;color:' + g + ";opacity:.78;text-align:center;" + emboss + '">PASSPORT OF<br>THINGS LOGGED</div>' +
         "</div>" +
@@ -475,7 +475,7 @@ export class PassportBook {
       '<div style="position:absolute;inset:16px;border:1px solid ' + g + ';opacity:.85;border-radius:3px;"></div>' +
       '<div style="position:absolute;inset:21px;border:0.5px solid ' + g + ';opacity:.45;border-radius:2px;"></div>' +
       '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;padding:70px 40px 0;">' +
-      '<svg viewBox="0 0 320 78" width="280" height="62" style="overflow:visible;"><defs><path id="atlasArc" d="M18,70 A250,250 0 0 1 302,70" fill="none"/></defs><text font-family="Marcellus,serif" font-size="40" letter-spacing="14" fill="' + g + '" style="' + textShadow + '"><textPath href="#atlasArc" startOffset="50%" text-anchor="middle">ATLAS</textPath></text></svg>' +
+      '<svg viewBox="0 0 320 78" width="280" height="62" style="overflow:visible;"><defs><path id="atlasArc" d="M18,70 A250,250 0 0 1 302,70" fill="none"/></defs><text font-family="Marcellus,serif" font-size="40" letter-spacing="14" fill="' + g + '" style="' + textShadow + '"><textPath href="#atlasArc" startOffset="50%" text-anchor="middle">WORLOG</textPath></text></svg>' +
       '<div style="flex:1;display:flex;align-items:center;justify-content:center;margin:6px 0;"><div style="display:inline-flex;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35));">' + this.crest(140, g, GOLD_LO) + "</div></div>" +
       '<div style="font-family:\'Special Elite\',monospace;font-size:10.5px;letter-spacing:4.5px;color:' + g + ";" + textShadow + ';text-align:center;">PASSPORT OF THINGS LOGGED</div>' +
       '<div style="margin-top:10px;font-family:\'Special Elite\',monospace;font-size:8px;letter-spacing:3px;color:' + g + ';opacity:.6;">✦ ✦ ✦</div>' +
@@ -496,7 +496,7 @@ export class PassportBook {
       '<div style="font-family:\'Special Elite\',monospace;font-size:10px;letter-spacing:3px;color:#6b5b3e;line-height:2.1;text-wrap:balance;">THIS PASSPORT IS THE PROPERTY OF<br>THE HOLDER NAMED WITHIN, AND RECORDS<br>EVERY THING THEY HAVE LOGGED IN THE WORLD.</div>' +
       '<div style="margin:28px auto;width:140px;height:1px;background:rgba(138,90,59,.45);"></div>' +
       '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:15px;color:#7a6a48;max-width:300px;text-wrap:pretty;">Carry it lightly. Stamp it often. The blank pages are a promise, not an emptiness.</div>' +
-      '<div style="margin-top:34px;font-family:\'Courier Prime\',monospace;font-size:9px;letter-spacing:2px;color:#8a7a58;">ATLAS · BUREAU OF THINGS LOGGED</div>' +
+      '<div style="margin-top:34px;font-family:\'Courier Prime\',monospace;font-size:9px;letter-spacing:2px;color:#8a7a58;">WORLOG · BUREAU OF THINGS LOGGED</div>' +
       "</div></div>"
     );
   }
@@ -517,16 +517,16 @@ export class PassportBook {
       '<div style="position:absolute;inset:0;pointer-events:none;opacity:.5;background:repeating-radial-gradient(circle at 50% 46%,transparent 0 14px,rgba(160,130,80,.05) 14px 15px);"></div>' +
       '<div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:30px 34px 22px;">' +
       '<div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1.5px solid ' + ink + ';padding-bottom:9px;">' +
-      '<div style="font-family:\'Marcellus\',serif;font-size:13px;letter-spacing:5px;color:' + ink + ';">ATLAS</div>' +
+      '<div style="font-family:\'Marcellus\',serif;font-size:13px;letter-spacing:5px;color:' + ink + ';">WORLOG</div>' +
       '<div style="text-align:right;"><div style="font-family:\'Special Elite\',monospace;font-size:9px;letter-spacing:2px;color:' + soft + ';">PASSPORT · PASSEPORT</div></div>' +
       "</div>" +
-      '<div style="display:flex;justify-content:space-between;font-family:\'Courier Prime\',monospace;font-size:8.5px;letter-spacing:1px;color:' + soft + ';padding:6px 0 14px;"><span>TYPE&nbsp;&nbsp;<b style="color:' + ink + ';">P</b></span><span>CODE&nbsp;&nbsp;<b style="color:' + ink + ';">ATL</b></span><span>PASSPORT No.&nbsp;&nbsp;<b style="color:' + ink + ';">' + esc(H.no) + "</b></span></div>" +
+      '<div style="display:flex;justify-content:space-between;font-family:\'Courier Prime\',monospace;font-size:8.5px;letter-spacing:1px;color:' + soft + ';padding:6px 0 14px;"><span>TYPE&nbsp;&nbsp;<b style="color:' + ink + ';">P</b></span><span>CODE&nbsp;&nbsp;<b style="color:' + ink + ';">WOR</b></span><span>PASSPORT No.&nbsp;&nbsp;<b style="color:' + ink + ';">' + esc(H.no) + "</b></span></div>" +
       '<div style="display:flex;gap:22px;flex:1;">' +
       '<div style="flex:0 0 126px;">' +
       '<div style="position:relative;width:126px;height:158px;border:1px solid ' + sep + ';background:#EDE0C2;overflow:hidden;box-shadow:inset 0 0 0 4px #F3EAD6,inset 0 0 0 5px rgba(138,90,59,.4);">' +
       '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.5;">' + this.globe(126, 158, "#B79F73", 0.9) + "</div>" +
       '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;"><span style="font-family:\'Marcellus\',serif;font-size:74px;color:rgba(46,42,34,.34);letter-spacing:-2px;">' + esc(H.mono) + "</span></div>" +
-      '<div style="position:absolute;left:6px;bottom:5px;font-family:\'Courier Prime\',monospace;font-size:6.5px;letter-spacing:1px;color:' + sep + ';opacity:.8;">ATL·' + esc(H.mono) + "</div>" +
+      '<div style="position:absolute;left:6px;bottom:5px;font-family:\'Courier Prime\',monospace;font-size:6.5px;letter-spacing:1px;color:' + sep + ';opacity:.8;">WOR·' + esc(H.mono) + "</div>" +
       "</div>" +
       '<div style="margin-top:10px;font-family:\'Special Elite\',monospace;font-size:7.5px;letter-spacing:1.4px;color:' + soft + ';text-transform:uppercase;">Holder’s mark</div>' +
       '<div style="font-family:\'Marcellus\',serif;font-size:23px;color:' + ink + ';font-style:italic;border-bottom:1px solid rgba(138,90,59,.4);padding-bottom:3px;transform:rotate(-3deg);transform-origin:left;">' + esc(H.name) + "</div>" +
@@ -636,7 +636,7 @@ export class PassportBook {
     }
     let foot = "";
     if (side === "R") {
-      foot = '<div style="position:absolute;right:26px;bottom:18px;z-index:200;font-family:\'Courier Prime\',monospace;font-size:8.5px;letter-spacing:1.5px;color:' + soft + ';opacity:.8;">ATL · ' + esc(co.name.toUpperCase()) + " · p." + pad((ci + 1) * 2 + 1) + "</div>";
+      foot = '<div style="position:absolute;right:26px;bottom:18px;z-index:200;font-family:\'Courier Prime\',monospace;font-size:8.5px;letter-spacing:1.5px;color:' + soft + ';opacity:.8;">WOR · ' + esc(co.name.toUpperCase()) + " · p." + pad((ci + 1) * 2 + 1) + "</div>";
     }
     return (
       '<div style="position:absolute;inset:0;background:#F3EAD6;overflow:hidden;">' + this.paperBase(side) + wm + guilloche +
@@ -778,8 +778,8 @@ export class PassportBook {
   }
 
   label(t: number): string {
-    if (t === 0) return "ATLAS · CLOSED";
-    if (t === this.maxTurn) return "ATLAS · BACK COVER";
+    if (t === 0) return "WORLOG · CLOSED";
+    if (t === this.maxTurn) return "WORLOG · BACK COVER";
     const sp = this.spreads[t - 1];
     if (sp.left.k === "insidecover") return "IDENTIFICATION";
     if (sp.left.k === "index") return "INDEX OF VISAS";

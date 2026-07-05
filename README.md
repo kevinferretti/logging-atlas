@@ -1,4 +1,4 @@
-# Atlas — A Passport of Things Logged
+# Worlog — A Passport of Things Logged
 
 Log the recipes, books, films, music, and places you've experienced from around
 the world. Each country becomes a postmark stamp on a spinning vintage globe;
@@ -7,7 +7,7 @@ open any country to flip through its "passport" of logged entries.
 Built from the Claude design export *Global logging passport app* as a real,
 account-backed full‑stack app.
 
-![Atlas globe](docs/world.png)
+![Worlog globe](docs/world.png)
 
 ## Stack
 

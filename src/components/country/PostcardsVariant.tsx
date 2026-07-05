@@ -47,7 +47,7 @@ export default function PostcardsVariant({ country: c, onBack, onPassport, onAdd
               gap: 3,
             }}
           >
-            <span style={{ fontFamily: MONO, fontSize: 7.5, letterSpacing: 3 }}>ATLAS</span>
+            <span style={{ fontFamily: MONO, fontSize: 7.5, letterSpacing: 3 }}>WORLOG</span>
             <span style={{ fontFamily: DISPLAY, fontSize: 15, letterSpacing: 4 }}>PASSPORT</span>
             <span style={{ fontSize: 9, opacity: 0.85 }}>✦</span>
           </button>

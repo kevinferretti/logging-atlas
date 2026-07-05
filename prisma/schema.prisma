@@ -1,4 +1,4 @@
-// Prisma schema for Atlas — A Passport of Things Logged.
+// Prisma schema for Worlog — A Passport of Things Logged.
 //
 // Local dev uses SQLite for zero-setup. To move to production Postgres:
 //   1. set `provider = "postgresql"` below

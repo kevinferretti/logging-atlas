@@ -19,7 +19,7 @@ function holderNo(id: string): { no: string; noRaw: string } {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
   const s = (h % 1000000).toString().padStart(6, "0");
-  return { no: "ATL " + s.slice(0, 3) + " " + s.slice(3), noRaw: "ATL" + s + "3" };
+  return { no: "WOR " + s.slice(0, 3) + " " + s.slice(3), noRaw: "WOR" + s + "3" };
 }
 
 export default function PassportBook({ user, countries, dark, initialCountryId, onClose, onDelete }: PassportBookProps) {
@@ -78,7 +78,7 @@ export default function PassportBook({ user, countries, dark, initialCountryId, 
       entries: totalEntries,
       no,
       noRaw,
-      nat: "ATLAS",
+      nat: "WORLOG",
       auth: "BUREAU OF THINGS LOGGED",
     };
   }, [user, countries]);

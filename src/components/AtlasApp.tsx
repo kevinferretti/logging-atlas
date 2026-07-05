@@ -130,7 +130,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
       {/* Top bar */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 5, display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "22px 30px", pointerEvents: "none" }}>
         <div style={{ pointerEvents: "auto" }}>
-          <div style={{ fontFamily: "Marcellus,serif", fontSize: 25, letterSpacing: 7, color: "var(--ink)" }}>ATLAS</div>
+          <div style={{ fontFamily: "Marcellus,serif", fontSize: 25, letterSpacing: 7, color: "var(--ink)" }}>WORLOG</div>
           <button
             onClick={() => {
               setLogCountryId(null);
