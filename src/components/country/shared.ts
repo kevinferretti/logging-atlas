@@ -2,6 +2,7 @@
 // Every variant renders the full page body (header, entries, actions) from
 // these props; once a winner is picked the losers can be deleted wholesale.
 
+import { isInlineImageType } from "@/lib/filetypes";
 import type { Palette } from "@/lib/palettes";
 import type { Entry, LoggedCountry } from "@/lib/types";
 
@@ -60,5 +61,5 @@ export function fileHref(e: Entry): string | null {
 }
 
 export function isImage(e: Entry): boolean {
-  return !!e.fileKey && !!e.fileType && e.fileType.startsWith("image/");
+  return !!e.fileKey && isInlineImageType(e.fileType);
 }

@@ -2,6 +2,7 @@ import { readFile } from "fs/promises";
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { INLINE_FILE_TYPES } from "@/lib/filetypes";
 import { isValidKey, uploadPath } from "@/lib/uploads";
 
 // GET /api/files/[key] — stream an uploaded file, but only to the user who owns
@@ -27,10 +28,15 @@ export async function GET(_req: Request, { params }: { params: { key: string } }
   }
 
   const safeName = (entry.fileName || "file").replace(/[\r\n"]/g, "");
+  // The stored type is whatever the uploader's browser claimed. Only allowlisted
+  // types render inline; the rest download as opaque bytes so an uploaded HTML
+  // or SVG file can never execute on this origin.
+  const inline = !!entry.fileType && INLINE_FILE_TYPES.has(entry.fileType);
   return new Response(new Uint8Array(data), {
     headers: {
-      "Content-Type": entry.fileType || "application/octet-stream",
-      "Content-Disposition": `inline; filename="${safeName}"`,
+      "Content-Type": inline ? entry.fileType! : "application/octet-stream",
+      "Content-Disposition": `${inline ? "inline" : "attachment"}; filename="${safeName}"`,
+      "X-Content-Type-Options": "nosniff",
       "Cache-Control": "private, max-age=3600",
     },
   });

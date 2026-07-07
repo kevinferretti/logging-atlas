@@ -85,6 +85,8 @@ export async function POST(req: Request) {
   const category = String(form.get("category") ?? "");
   const wishlist = form.get("wishlist") === "1";
   const title = String(form.get("title") ?? "").trim();
+  const by = String(form.get("by") ?? "").trim();
+  const note = String(form.get("note") ?? "").trim();
   const link = normalizeLink(String(form.get("link") ?? ""));
 
   if (!catalogCountry(countryId)) {
@@ -124,6 +126,8 @@ export async function POST(req: Request) {
       category,
       wishlist,
       title: title.slice(0, 200),
+      by: by.slice(0, 120),
+      note: note.slice(0, 500),
       link,
       date,
       year,

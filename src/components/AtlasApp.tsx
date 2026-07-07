@@ -77,6 +77,8 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
     fd.append("category", input.category);
     fd.append("wishlist", input.wishlist ? "1" : "0");
     fd.append("title", input.title);
+    fd.append("by", input.by);
+    fd.append("note", input.note);
     fd.append("link", input.link);
     fd.append("date", input.date);
     if (file) fd.append("file", file);

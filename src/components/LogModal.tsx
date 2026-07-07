@@ -24,6 +24,8 @@ export default function LogModal({ initialCountryId, onClose, onSave }: LogModal
   const [countryId, setCountryId] = useState(initialCountryId ?? COUNTRY_CATALOG_SORTED[0]?.id ?? "");
   const [category, setCategory] = useState<CategoryKey>("recipe");
   const [title, setTitle] = useState("");
+  const [by, setBy] = useState("");
+  const [note, setNote] = useState("");
   const [link, setLink] = useState("");
   const [date, setDate] = useState(todayISO());
   const [file, setFile] = useState<File | null>(null);
@@ -37,7 +39,10 @@ export default function LogModal({ initialCountryId, onClose, onSave }: LogModal
     setSaving(wishlist ? "wish" : "log");
     setError(null);
     try {
-      await onSave({ countryId, category, wishlist, title: t, link: link.trim(), date }, category === "recipe" ? file : null);
+      await onSave(
+        { countryId, category, wishlist, title: t, by: by.trim(), note: note.trim(), link: link.trim(), date },
+        category === "recipe" ? file : null,
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save entry.");
       setSaving(false);
@@ -86,7 +91,9 @@ export default function LogModal({ initialCountryId, onClose, onSave }: LogModal
           })}
         </div>
 
-        <input value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save(false)} placeholder="Name" style={inputStyle} autoFocus />
+        <input value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save(false)} placeholder="Name" maxLength={200} style={inputStyle} autoFocus />
+        <input value={by} onChange={(e) => setBy(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save(false)} placeholder={BY_PLACEHOLDER[category]} maxLength={120} style={inputStyle} />
+        <input value={note} onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save(false)} placeholder="Note (optional)" maxLength={500} style={inputStyle} />
         <input value={link} onChange={(e) => setLink(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save(false)} placeholder="Link (optional)" style={inputStyle} />
         <label style={labelStyle}>
           Date
@@ -125,6 +132,15 @@ export default function LogModal({ initialCountryId, onClose, onSave }: LogModal
     </div>
   );
 }
+
+// Byline placeholder phrased per category, matching how subLine renders it.
+const BY_PLACEHOLDER: Record<CategoryKey, string> = {
+  recipe: "From — cook or source (optional)",
+  book: "By — author (optional)",
+  movie: "Director (optional)",
+  music: "By — artist (optional)",
+  place: "With — company or guide (optional)",
+};
 
 const inputStyle: CSSProperties = {
   fontFamily: "'EB Garamond',serif",

@@ -98,8 +98,15 @@ const GOLD = "#C9A24B";
 const GOLD_LO = "#9A742B";
 const INK: Record<CategoryKey, string> = { recipe: "#A23A2E", book: "#2C4F8A", movie: "#3A3733", music: "#2E6B4F", place: "#6B3A77" };
 
+// Quotes must be escaped too — esc() output lands inside double-quoted
+// attributes (data-cap, href), where a bare " breaks out of the attribute.
 function esc(s: string): string {
-  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 function pad(n: number): string {
   return n < 10 ? "0" + n : "" + n;

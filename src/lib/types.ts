@@ -44,6 +44,8 @@ export interface NewEntryInput {
   category: CategoryKey;
   wishlist: boolean;
   title: string;
+  by: string;
+  note: string;
   link: string;
   /** "yyyy-mm-dd" from the date picker. */
   date: string;

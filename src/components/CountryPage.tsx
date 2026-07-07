@@ -4,7 +4,7 @@
 // at the bottom is temporary — once a favourite is chosen the rest go), plus
 // the passport-book overlay and the log modal.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import PassportBook from "./PassportBook";
 import LogModal from "./LogModal";
@@ -65,6 +65,8 @@ export default function CountryPage({ user, initialEntries, countryId, initialVa
     fd.append("category", input.category);
     fd.append("wishlist", input.wishlist ? "1" : "0");
     fd.append("title", input.title);
+    fd.append("by", input.by);
+    fd.append("note", input.note);
     fd.append("link", input.link);
     fd.append("date", input.date);
     if (file) fd.append("file", file);
@@ -81,15 +83,18 @@ export default function CountryPage({ user, initialEntries, countryId, initialVa
   async function deleteEntry(entryId: string) {
     const res = await fetch(`/api/entries/${entryId}`, { method: "DELETE" });
     if (!res.ok) return;
-    const next = entries.filter((e) => e.id !== entryId);
-    setEntries(next);
-    // Book can't stay open on a country that just emptied out.
-    if (!next.some((e) => resolveCountryId(e.countryId) === id)) setPassportOpen(false);
+    // Functional update — overlapping deletes must not resurrect each other.
+    setEntries((prev) => prev.filter((e) => e.id !== entryId));
   }
 
   function confirmDelete(entryId: string) {
     if (window.confirm("Remove this entry from the log?")) void deleteEntry(entryId);
   }
+
+  // Book can't stay open on a country that just emptied out.
+  useEffect(() => {
+    if (passportOpen && !country) setPassportOpen(false);
+  }, [passportOpen, country]);
 
   const rootStyle = {
     ...paletteCssVars(palette),
@@ -170,7 +175,7 @@ export default function CountryPage({ user, initialEntries, countryId, initialVa
           dark={dark}
           initialCountryId={id}
           onClose={() => setPassportOpen(false)}
-          onDelete={deleteEntry}
+          onDelete={confirmDelete}
         />
       )}
 
