@@ -12,7 +12,8 @@ interface PassportBookProps {
   dark: boolean;
   initialCountryId: string | null;
   onClose: () => void;
-  onDelete: (id: string) => void;
+  /** May return false to signal the delete was declined (keeps the popover up). */
+  onDelete: (id: string) => boolean | void;
 }
 
 function holderNo(id: string): { no: string; noRaw: string } {

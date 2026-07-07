@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
+import { normalizeFileType } from "./filetypes";
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MB
 
@@ -27,7 +28,9 @@ export async function saveUpload(file: File): Promise<SavedUpload> {
   const key = `${randomUUID()}-${sanitize(file.name)}`;
   const buf = Buffer.from(await file.arrayBuffer());
   await writeFile(path.join(dir, key), buf);
-  return { fileName: file.name, fileKey: key, fileType: file.type || "application/octet-stream" };
+  // Normalize the browser-claimed type at the door so the DB never holds
+  // mixed-case or parameterized MIME strings the serve-time checks would miss.
+  return { fileName: file.name, fileKey: key, fileType: normalizeFileType(file.type) || "application/octet-stream" };
 }
 
 // Keys are random-uuid prefixed; reject anything that could escape the dir.

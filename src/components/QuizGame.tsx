@@ -534,7 +534,8 @@ export default function QuizGame({ entries, palette, onClose }: QuizGameProps) {
               )}
               <span style={{ fontFamily: "Marcellus,serif", fontSize: 23, color: "var(--ink)" }}>{round.entry.title}</span>
             </div>
-            {subLine(round.entry) && (
+            {/* Byline only after the guess — "dir. Kurosawa" would give the country away. */}
+            {result && subLine(round.entry) && (
               <div style={{ marginTop: 4, fontFamily: "'EB Garamond',serif", fontStyle: "italic", fontSize: 14.5, color: "var(--ink-soft)" }}>{subLine(round.entry)}</div>
             )}
           </div>

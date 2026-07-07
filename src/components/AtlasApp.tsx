@@ -6,6 +6,7 @@ import Globe, { type GlobeMode } from "./Globe";
 import LogModal from "./LogModal";
 import QuizGame from "./QuizGame";
 import { COUNTRY_CATALOG } from "@/lib/countries";
+import { submitEntry } from "@/lib/entriesClient";
 import { assembleCountries } from "@/lib/logbook";
 import { buildCountDisc } from "@/lib/stamps";
 import { coercePaletteName, getPalette, paletteCssVars, type Palette, type PaletteName } from "@/lib/palettes";
@@ -72,22 +73,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
   }
 
   async function addEntry(input: NewEntryInput, file?: File | null): Promise<Entry> {
-    const fd = new FormData();
-    fd.append("countryId", input.countryId);
-    fd.append("category", input.category);
-    fd.append("wishlist", input.wishlist ? "1" : "0");
-    fd.append("title", input.title);
-    fd.append("by", input.by);
-    fd.append("note", input.note);
-    fd.append("link", input.link);
-    fd.append("date", input.date);
-    if (file) fd.append("file", file);
-    const res = await fetch("/api/entries", { method: "POST", body: fd });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.error ?? "Could not save entry.");
-    }
-    const { entry } = (await res.json()) as { entry: Entry };
+    const entry = await submitEntry(input, file);
     setEntries((prev) => [...prev, entry]);
     return entry;
   }

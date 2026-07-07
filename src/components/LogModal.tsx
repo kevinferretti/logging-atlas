@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { CSSProperties } from "react";
 import { CATEGORIES } from "@/lib/categories";
 import { COUNTRY_CATALOG_SORTED } from "@/lib/countries";
-import type { CategoryKey, NewEntryInput } from "@/lib/types";
+import { FIELD_LIMITS, type CategoryKey, type NewEntryInput } from "@/lib/types";
 
 interface LogModalProps {
   /** Preselect this country (set when the modal opens from a map click). */
@@ -49,6 +49,11 @@ export default function LogModal({ initialCountryId, onClose, onSave }: LogModal
     }
   }
 
+  // Submit on Enter — but not the Enter that commits an IME composition.
+  function submitOnEnter(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter" && !e.nativeEvent.isComposing) save(false);
+  }
+
   return (
     <div
       onClick={onClose}
@@ -56,7 +61,7 @@ export default function LogModal({ initialCountryId, onClose, onSave }: LogModal
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: 460, background: "var(--paper2)", border: "1px solid var(--sepia)", borderRadius: 5, boxShadow: "0 24px 60px rgba(40,28,12,.4)", padding: 24, display: "flex", flexDirection: "column", gap: 14 }}
+        style={{ width: "100%", maxWidth: 460, maxHeight: "100%", overflowY: "auto", background: "var(--paper2)", border: "1px solid var(--sepia)", borderRadius: 5, boxShadow: "0 24px 60px rgba(40,28,12,.4)", padding: 24, display: "flex", flexDirection: "column", gap: 14 }}
       >
         <div>
           <div style={{ fontFamily: "Marcellus,serif", fontSize: 24, color: "var(--ink)" }}>Log an entry</div>
@@ -91,10 +96,10 @@ export default function LogModal({ initialCountryId, onClose, onSave }: LogModal
           })}
         </div>
 
-        <input value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save(false)} placeholder="Name" maxLength={200} style={inputStyle} autoFocus />
-        <input value={by} onChange={(e) => setBy(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save(false)} placeholder={BY_PLACEHOLDER[category]} maxLength={120} style={inputStyle} />
-        <input value={note} onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save(false)} placeholder="Note (optional)" maxLength={500} style={inputStyle} />
-        <input value={link} onChange={(e) => setLink(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save(false)} placeholder="Link (optional)" style={inputStyle} />
+        <input value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={submitOnEnter} placeholder="Name" maxLength={FIELD_LIMITS.title} style={inputStyle} autoFocus />
+        <input value={by} onChange={(e) => setBy(e.target.value)} onKeyDown={submitOnEnter} placeholder={BY_PLACEHOLDER[category]} maxLength={FIELD_LIMITS.by} style={inputStyle} />
+        <input value={note} onChange={(e) => setNote(e.target.value)} onKeyDown={submitOnEnter} placeholder="Note (optional)" maxLength={FIELD_LIMITS.note} style={inputStyle} />
+        <input value={link} onChange={(e) => setLink(e.target.value)} onKeyDown={submitOnEnter} placeholder="Link (optional)" style={inputStyle} />
         <label style={labelStyle}>
           Date
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle} />

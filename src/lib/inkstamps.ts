@@ -3,6 +3,7 @@
 // (round / oval / rect / hex / cog) in a category ink colour, roughed up by the
 // SVG turbulence filters defined in the Logbook component.
 
+import { escapeHtml as esc } from "./html";
 import type { CategoryKey, Entry } from "./types";
 
 // Dark inks for light paper (multiply blend).
@@ -45,15 +46,6 @@ const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "
 const ACTIONS = ["ENTRY", "ARRIVAL", "ADMITTED", "ENTRADA", "DEPARTED", "VISTO"];
 
 let uid = 0;
-
-function esc(s: string): string {
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 function wrap(t: string, mx = 12): string[] {
   const words = String(t).split(" ");

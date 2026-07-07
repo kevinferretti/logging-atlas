@@ -16,6 +16,7 @@ import DossierVariant from "./country/DossierVariant";
 import GazetteVariant from "./country/GazetteVariant";
 import type { VariantProps } from "./country/shared";
 import { catalogCountry, resolveCountryId } from "@/lib/countries";
+import { submitEntry } from "@/lib/entriesClient";
 import { assembleCountries } from "@/lib/logbook";
 import { coercePaletteName, getPalette, isDarkPalette, paletteCssVars } from "@/lib/palettes";
 import type { Entry, NewEntryInput, SessionUser } from "@/lib/types";
@@ -60,22 +61,7 @@ export default function CountryPage({ user, initialEntries, countryId, initialVa
   }
 
   async function addEntry(input: NewEntryInput, file?: File | null) {
-    const fd = new FormData();
-    fd.append("countryId", input.countryId);
-    fd.append("category", input.category);
-    fd.append("wishlist", input.wishlist ? "1" : "0");
-    fd.append("title", input.title);
-    fd.append("by", input.by);
-    fd.append("note", input.note);
-    fd.append("link", input.link);
-    fd.append("date", input.date);
-    if (file) fd.append("file", file);
-    const res = await fetch("/api/entries", { method: "POST", body: fd });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.error ?? "Could not save entry.");
-    }
-    const { entry } = (await res.json()) as { entry: Entry };
+    const entry = await submitEntry(input, file);
     setEntries((prev) => [...prev, entry]);
     return entry;
   }
@@ -87,8 +73,12 @@ export default function CountryPage({ user, initialEntries, countryId, initialVa
     setEntries((prev) => prev.filter((e) => e.id !== entryId));
   }
 
-  function confirmDelete(entryId: string) {
-    if (window.confirm("Remove this entry from the log?")) void deleteEntry(entryId);
+  // Returns whether the user confirmed, so the book can keep its popover up
+  // when the delete is declined.
+  function confirmDelete(entryId: string): boolean {
+    const ok = window.confirm("Remove this entry from the log?");
+    if (ok) void deleteEntry(entryId);
+    return ok;
   }
 
   // Book can't stay open on a country that just emptied out.

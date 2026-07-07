@@ -13,6 +13,7 @@ import {
 import { feature } from "topojson-client";
 import topoData from "world-atlas/countries-110m.json";
 import { COUNTRY_CATALOG } from "@/lib/countries";
+import { escapeHtml as esc } from "@/lib/html";
 import type { Palette } from "@/lib/palettes";
 import type { LoggedCountry } from "@/lib/types";
 
@@ -522,10 +523,6 @@ class GlobeEngine {
       cv.style.opacity = "1";
     }, 170);
   }
-}
-
-function esc(s: string): string {
-  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 export default function Globe({ countries, palette, mode, active, onSelect }: GlobeProps) {

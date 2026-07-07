@@ -7,7 +7,9 @@
 // wrapped by PassportBook.tsx. Stamp SVGs reuse buildEntryStamp from inkstamps
 // and the shared ink turbulence filters (rendered by <InkFilters/>).
 
+import { escapeHtml as esc } from "./html";
 import { buildEntryStamp } from "./inkstamps";
+import { subLine } from "./logbook";
 import type { CategoryKey, Entry } from "./types";
 
 export interface BookHolder {
@@ -68,7 +70,8 @@ export interface BookOptions {
   sound: boolean;
   cover: string;
   onClose: () => void;
-  onDeleteEntry: (id: string) => void;
+  /** Return false to signal the delete was declined (keeps the popover up). */
+  onDeleteEntry: (id: string) => boolean | void;
 }
 
 type Role = { k: string; ci?: number };
@@ -98,16 +101,6 @@ const GOLD = "#C9A24B";
 const GOLD_LO = "#9A742B";
 const INK: Record<CategoryKey, string> = { recipe: "#A23A2E", book: "#2C4F8A", movie: "#3A3733", music: "#2E6B4F", place: "#6B3A77" };
 
-// Quotes must be escaped too — esc() output lands inside double-quoted
-// attributes (data-cap, href), where a bare " breaks out of the attribute.
-function esc(s: string): string {
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 function pad(n: number): string {
   return n < 10 ? "0" + n : "" + n;
 }
@@ -864,9 +857,17 @@ export class PassportBook {
     const linkRow = e.link
       ? '<a href="' + esc(e.link) + '" target="_blank" rel="noreferrer noopener" style="display:block;margin-top:8px;font-family:\'Special Elite\',monospace;font-size:11px;color:#8A5A3B;text-decoration:none;word-break:break-all;">↗ ' + esc(this.linkHost(e.link)) + "</a>"
       : "";
+    const byRow = e.by
+      ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:#6B6154;margin-top:2px;">' + esc(subLine(e)) + "</div>"
+      : "";
+    const noteRow = e.note
+      ? '<div style="font-family:\'EB Garamond\',serif;font-size:13.5px;color:#4A4336;margin-top:7px;line-height:1.35;">' + esc(e.note) + "</div>"
+      : "";
     pop.innerHTML =
       '<div style="font-family:\'Special Elite\',monospace;font-size:9px;letter-spacing:1.6px;text-transform:uppercase;color:' + ink + ';">' + this.CATL[e.category] + (e.wishlist ? " · ☆ WISH LIST" : " · '" + String(e.year).slice(2)) + "</div>" +
       '<div style="font-family:\'Marcellus\',serif;font-size:19px;color:#2E2A22;margin-top:3px;line-height:1.12;">' + esc(e.title) + "</div>" +
+      byRow +
+      noteRow +
       linkRow +
       '<button data-del="' + esc(e.id) + '" style="margin-top:12px;width:100%;background:none;border:1px solid rgba(155,74,57,.5);color:#9B4A39;border-radius:2px;padding:7px 0;cursor:pointer;font-family:\'Special Elite\',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;">Remove entry</button>';
     const r = this.els.root.getBoundingClientRect();
@@ -879,8 +880,9 @@ export class PassportBook {
     if (delBtn) {
       delBtn.onclick = (ev) => {
         ev.stopPropagation();
-        this.closePopover();
-        this.opts.onDeleteEntry(e.id);
+        // The handler may put up a confirm dialog — keep the popover in place
+        // when the user cancels, so the button press isn't silently swallowed.
+        if (this.opts.onDeleteEntry(e.id) !== false) this.closePopover();
       };
     }
   }

@@ -4,7 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 import { isCategoryKey } from "@/lib/categories";
 import { catalogCountry, resolveCountryId } from "@/lib/countries";
 import { MAX_UPLOAD_BYTES, normalizeLink, saveUpload } from "@/lib/uploads";
-import type { CategoryKey, Entry } from "@/lib/types";
+import { FIELD_LIMITS, type CategoryKey, type Entry } from "@/lib/types";
 
 const SELECT = {
   id: true,
@@ -53,6 +53,18 @@ function localDateString(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+/** Multipart field as a trimmed string — a File-typed part reads as absent. */
+function formString(form: FormData, name: string): string {
+  const v = form.get(name);
+  return typeof v === "string" ? v.trim() : "";
+}
+
+/** Cap to n UTF-16 units without leaving a split surrogate pair at the end. */
+function cap(s: string, n: number): string {
+  const cut = s.slice(0, n);
+  return /[\uD800-\uDBFF]$/.test(cut) ? cut.slice(0, -1) : cut;
+}
+
 // GET /api/entries — all entries for the signed-in user.
 export async function GET() {
   const user = await getSessionUser();
@@ -81,13 +93,13 @@ export async function POST(req: Request) {
 
   // Normalize legacy ids at write time so the database only accumulates
   // current catalog ids.
-  const countryId = resolveCountryId(String(form.get("countryId") ?? ""));
-  const category = String(form.get("category") ?? "");
+  const countryId = resolveCountryId(formString(form, "countryId"));
+  const category = formString(form, "category");
   const wishlist = form.get("wishlist") === "1";
-  const title = String(form.get("title") ?? "").trim();
-  const by = String(form.get("by") ?? "").trim();
-  const note = String(form.get("note") ?? "").trim();
-  const link = normalizeLink(String(form.get("link") ?? ""));
+  const title = formString(form, "title");
+  const by = formString(form, "by");
+  const note = formString(form, "note");
+  const link = normalizeLink(formString(form, "link"));
 
   if (!catalogCountry(countryId)) {
     return NextResponse.json({ error: "Unknown country." }, { status: 400 });
@@ -103,7 +115,7 @@ export async function POST(req: Request) {
   // when missing or malformed. `year` is derived from it so year-based
   // grouping and stamps always agree with the picked date.
   const currentYear = new Date().getFullYear();
-  let date = String(form.get("date") ?? "");
+  let date = formString(form, "date");
   if (!isCalendarDate(date) || Number(date.slice(0, 4)) < 1900 || Number(date.slice(0, 4)) > currentYear + 1) {
     date = localDateString(new Date());
   }
@@ -125,9 +137,9 @@ export async function POST(req: Request) {
       countryId,
       category,
       wishlist,
-      title: title.slice(0, 200),
-      by: by.slice(0, 120),
-      note: note.slice(0, 500),
+      title: cap(title, FIELD_LIMITS.title),
+      by: cap(by, FIELD_LIMITS.by),
+      note: cap(note, FIELD_LIMITS.note),
       link,
       date,
       year,

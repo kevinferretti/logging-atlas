@@ -38,6 +38,9 @@ export interface SessionUser {
   theme: string;
 }
 
+/** Field length caps — enforced by the modal inputs and re-enforced by the API. */
+export const FIELD_LIMITS = { title: 200, by: 120, note: 500 } as const;
+
 /** Payload for logging a new entry (shared by the log modal and book). */
 export interface NewEntryInput {
   countryId: string;
