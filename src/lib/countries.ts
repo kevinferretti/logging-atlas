@@ -11,10 +11,12 @@
 import { COUNTRY_CATALOG, REGION_NAMES, type Region } from "./countryCatalog.generated";
 
 // "territory" marks dependencies and self-governing territories (Bermuda,
-// Hong Kong, Åland…) — purely descriptive: they're logged, counted, quizzed,
-// and stamped exactly like countries, but the picker groups them separately
-// and shows their administering country.
-export type CountryKind = "country" | "territory";
+// Hong Kong, Åland…); "disputed" marks de-facto states whose polygons overlay
+// their de-jure parent on the map (Abkhazia, South Ossetia, Transnistria).
+// Both are purely descriptive: every kind is logged, counted, quizzed, and
+// stamped exactly like a country — the kind only drives picker grouping and
+// map styling (disputed regions draw dash-bordered on top of the parent).
+export type CountryKind = "country" | "territory" | "disputed";
 
 export interface CatalogCountry {
   id: string;
@@ -253,6 +255,9 @@ const COUNTRY_PREFIX: Record<string, string> = {
   "258": "OVERSEAS COLLECTIVITY OF", // French Polynesia
   "876": "OVERSEAS COLLECTIVITY OF", // Wallis and Futuna
   "666": "OVERSEAS COLLECTIVITY OF", // Saint Pierre and Miquelon
+  "292": "BRITISH OVERSEAS TERRITORY OF", // Gibraltar
+  abkhazia: "REPUBLIC OF",
+  "south-ossetia": "REPUBLIC OF",
 };
 
 export function countryPrefix(id: string): string {

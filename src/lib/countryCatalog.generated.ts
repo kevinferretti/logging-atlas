@@ -1,7 +1,7 @@
 // GENERATED FILE — do not edit by hand. Run: npm run countries:generate
-// Built from the same cleaned countries-50m topology the globe draws
-// (atlasTopo.generated.ts), so every place on the map is loggable.
-// 238 places: 200 countries, 38 territories.
+// Built from the same merged topology the globe draws (atlasTopo.generated.ts),
+// so every place on the map is loggable. 243 places:
+// 201 countries, 39 territories, 3 de-facto states.
 
 import type { CatalogCountry } from "./countries";
 
@@ -38,6 +38,7 @@ export const REGION_NAMES = [
 export type Region = (typeof REGION_NAMES)[number];
 
 export const COUNTRY_CATALOG: CatalogCountry[] = [
+  { id: "abkhazia", name: "Abkhazia", region: "Caucasus", kind: "disputed", lon: 41.2, lat: 43.1 },
   { id: "4", name: "Afghanistan", region: "Central Asia", kind: "country", lon: 65.9, lat: 33.8 },
   { id: "248", name: "Åland Islands", region: "Northern Europe", kind: "territory", parentId: "246", lon: 19.9, lat: 60.2 },
   { id: "8", name: "Albania", region: "Southern Europe", kind: "country", lon: 20.1, lat: 41.1 },
@@ -119,6 +120,7 @@ export const COUNTRY_CATALOG: CatalogCountry[] = [
   { id: "268", name: "Georgia", region: "Caucasus", kind: "country", lon: 43.5, lat: 42.2 },
   { id: "276", name: "Germany", region: "Western Europe", kind: "country", lon: 10.4, lat: 51.2 },
   { id: "288", name: "Ghana", region: "West Africa", kind: "country", lon: -1.2, lat: 7.9 },
+  { id: "292", name: "Gibraltar", region: "Southern Europe", kind: "territory", parentId: "826", lon: -5.3, lat: 36.1 },
   { id: "300", name: "Greece", region: "Southern Europe", kind: "country", lon: 22, lat: 39.3 },
   { id: "304", name: "Greenland", region: "North America", kind: "territory", parentId: "208", lon: -41.8, lat: 73.1 },
   { id: "308", name: "Grenada", region: "Caribbean", kind: "country", lon: -61.7, lat: 12.1 },
@@ -239,6 +241,7 @@ export const COUNTRY_CATALOG: CatalogCountry[] = [
   { id: "710", name: "South Africa", region: "Southern Africa", kind: "country", lon: 24, lat: -29 },
   { id: "239", name: "South Georgia & the Sandwich Islands", region: "South Atlantic", kind: "territory", parentId: "826", lon: -36.7, lat: -54.4 },
   { id: "410", name: "South Korea", region: "East Asia", kind: "country", lon: 127.8, lat: 36.5 },
+  { id: "south-ossetia", name: "South Ossetia", region: "Caucasus", kind: "disputed", lon: 44.1, lat: 42.3 },
   { id: "728", name: "South Sudan", region: "East Africa", kind: "country", lon: 30.3, lat: 7.3 },
   { id: "724", name: "Spain", region: "Southern Europe", kind: "country", lon: -3.7, lat: 40.2 },
   { id: "144", name: "Sri Lanka", region: "South Asia", kind: "country", lon: 80.7, lat: 7.9 },
@@ -254,11 +257,13 @@ export const COUNTRY_CATALOG: CatalogCountry[] = [
   { id: "626", name: "Timor-Leste", region: "Southeast Asia", kind: "country", lon: 125.9, lat: -8.8 },
   { id: "768", name: "Togo", region: "West Africa", kind: "country", lon: 1, lat: 8.5 },
   { id: "776", name: "Tonga", region: "Oceania", kind: "country", lon: -175.2, lat: -21.2 },
+  { id: "transnistria", name: "Transnistria", region: "Eastern Europe", kind: "disputed", lon: 29.3, lat: 47.3 },
   { id: "780", name: "Trinidad and Tobago", region: "Caribbean", kind: "country", lon: -61.3, lat: 10.4 },
   { id: "788", name: "Tunisia", region: "North Africa", kind: "country", lon: 9.5, lat: 34 },
   { id: "792", name: "Turkey", region: "Western Asia", kind: "country", lon: 35, lat: 39 },
   { id: "795", name: "Turkmenistan", region: "Central Asia", kind: "country", lon: 59.4, lat: 39.1 },
   { id: "796", name: "Turks and Caicos Islands", region: "Caribbean", kind: "territory", parentId: "826", lon: -71.7, lat: 21.8 },
+  { id: "798", name: "Tuvalu", region: "Oceania", kind: "country", lon: 179.2, lat: -8.5 },
   { id: "850", name: "U.S. Virgin Islands", region: "Caribbean", kind: "territory", parentId: "840", lon: -64.8, lat: 17.7 },
   { id: "800", name: "Uganda", region: "East Africa", kind: "country", lon: 32.4, lat: 1.3 },
   { id: "804", name: "Ukraine", region: "Eastern Europe", kind: "country", lon: 31, lat: 49 },

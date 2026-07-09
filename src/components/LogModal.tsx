@@ -11,6 +11,7 @@ import { FIELD_LIMITS, type CategoryKey, type Entry, type NewEntryInput } from "
 const PICKER_GROUPS = [
   ["Countries", COUNTRY_CATALOG_SORTED.filter((c) => c.kind === "country")],
   ["Territories & dependencies", COUNTRY_CATALOG_SORTED.filter((c) => c.kind === "territory")],
+  ["Disputed regions", COUNTRY_CATALOG_SORTED.filter((c) => c.kind === "disputed")],
 ] as const;
 
 interface LogModalProps {

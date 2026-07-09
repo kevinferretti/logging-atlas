@@ -158,9 +158,14 @@ class QuizMapEngine {
       path(f);
       ctx.fillStyle = fill;
       ctx.fill();
-      ctx.lineWidth = marked ? 0.9 : 0.35;
+      // Disputed overlays keep their dashed border here too — without it
+      // they'd be invisible against the parent country they paint over.
+      const disputed = catalogCountry(id)?.kind === "disputed";
+      if (disputed) ctx.setLineDash([4, 3]);
+      ctx.lineWidth = disputed ? 0.8 : marked ? 0.9 : 0.35;
       ctx.strokeStyle = pal.coast;
       ctx.stroke();
+      if (disputed) ctx.setLineDash([]);
     }
 
     if (!res && this.hoveredId) {
@@ -207,7 +212,9 @@ class QuizMapEngine {
     if (inv && !isNaN(inv[0])) {
       const [lon, lat] = inv;
       if (lon >= -180 && lon <= 180 && lat >= -90 && lat <= 90) {
-        for (const f of this.features) {
+        // Reverse order: disputed overlays sit last and must beat the parent.
+        for (let i = this.features.length - 1; i >= 0; i--) {
+          const f = this.features[i];
           const id = String(f.id);
           const b = this.boundsById[id];
           if (!b) continue;

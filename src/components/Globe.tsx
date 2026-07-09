@@ -31,6 +31,9 @@ interface GlobeProps {
 
 const CAT_BY_ID = new Map(COUNTRY_CATALOG.map((c) => [c.id, c]));
 
+// Dash pattern for de-facto state borders (drawn as overlays on the parent).
+const DISPUTED_DASH = [4, 3];
+
 function hexA(hex: string, a: number): string {
   const h = hex.replace("#", "");
   const n = parseInt(h.length === 3 ? h.split("").map((x) => x + x).join("") : h, 16);
@@ -281,15 +284,21 @@ class GlobeEngine {
     ctx.stroke();
 
     for (const f of this.features) {
+      const id = String(f.id);
       ctx.beginPath();
       path(f);
-      const rec = this.counts.get(String(f.id));
+      const rec = this.counts.get(id);
       const logs = rec ? rec.logs : 0;
       ctx.fillStyle = logs > 0 ? this.heatColor(logs) : pal.land;
       ctx.fill();
-      ctx.lineWidth = logs > 0 ? 0.7 : 0.35;
+      // De-facto states are last in feature order, painting over their de-jure
+      // parent; the dashed border is the cartographic cue for a disputed line.
+      const disputed = CAT_BY_ID.get(id)?.kind === "disputed";
+      if (disputed) ctx.setLineDash(DISPUTED_DASH);
+      ctx.lineWidth = disputed ? 0.8 : logs > 0 ? 0.7 : 0.35;
       ctx.strokeStyle = pal.coast;
       ctx.stroke();
+      if (disputed) ctx.setLineDash([]);
     }
 
     if (this.hoveredId && this.featById[this.hoveredId]) {
@@ -342,7 +351,10 @@ class GlobeEngine {
       const rt = this.projection([lon, lat]);
       const onEarth = !!rt && Math.hypot(rt[0] - x, rt[1] - y) < 0.5;
       if (onEarth && lon >= -180 && lon <= 180 && lat >= -90 && lat <= 90) {
-        for (const f of this.features) {
+        // Reverse order: the topmost-drawn feature wins, so a de-facto state
+        // overlay beats the de-jure parent underneath it.
+        for (let i = this.features.length - 1; i >= 0; i--) {
+          const f = this.features[i];
           const id = String(f.id);
           const b = this.boundsById[id];
           if (!b) continue;

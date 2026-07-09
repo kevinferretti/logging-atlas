@@ -6,27 +6,39 @@
 //
 //   node scripts/generate-countries.mjs   (or: npm run countries:generate)
 //
-// The topology is derived rather than used raw because the 50m dataset needs
-// surgery: a few features are dropped (see EXCLUDED_FEATURES — one of them
-// shares Australia's ISO id and would shadow it in every by-id lookup), ids
-// are normalized to their catalog form (ISO 3166-1 numeric, leading zeros
-// stripped), and the features without an ISO id (partially recognized states)
-// get their synthetic ids baked in. Building the catalog from the same cleaned
-// topology keeps the map and the picker matched by construction.
+// The topology is derived rather than used raw because it merges three
+// sources and needs surgery besides:
+//   - world-atlas/countries-50m — the base map. A few features are dropped
+//     (see EXCLUDED_FEATURES — one shares Australia's ISO id and would shadow
+//     it in every by-id lookup), ids are normalized to their catalog form
+//     (ISO 3166-1 numeric, leading zeros stripped), and the features without
+//     an ISO id (partially recognized states) get their synthetic ids baked in.
+//   - world-atlas/countries-10m — only the SPLICED_FROM_10M features, places
+//     the 50m dataset omits entirely.
+//   - scripts/data/disputed-areas.geojson — vendored de-facto states (from
+//     Natural Earth's disputed-areas layer). These OVERLAP their de-jure
+//     parent (Georgia, Moldova), so they sit last in the feature order: the
+//     globe draws them on top and hit-tests them first.
+// Everything is decoded to GeoJSON, merged, and re-encoded with
+// topojson-server at the same 1e5 quantization world-atlas uses. Building the
+// catalog from the merged topology keeps map and picker matched by
+// construction.
 //
 // Label coordinates: hand-tuned values in CURATED win; everything else uses the
 // spherical centroid of the country's largest polygon (avoids centroids pulled
 // into the ocean by overseas islands or the antimeridian).
 
 import { createRequire } from "node:module";
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { geoArea, geoCentroid } from "d3-geo";
 import { feature } from "topojson-client";
+import { topology } from "topojson-server";
 
 const require = createRequire(import.meta.url);
-const topo = require("world-atlas/countries-50m.json");
+const topo50 = require("world-atlas/countries-50m.json");
+const topo10 = require("world-atlas/countries-10m.json");
 
 const SYNTHETIC_IDS = {
   Kosovo: "kosovo",
@@ -47,6 +59,18 @@ const EXCLUDED_FEATURES = new Set([
   // A contested glacier, not a loggable destination.
   "Siachen Glacier",
 ]);
+
+// Features the 50m dataset omits entirely, pulled from countries-10m instead.
+const SPLICED_FROM_10M = new Set([
+  "292", // Gibraltar
+  "798", // Tuvalu
+]);
+
+// De-facto states merged from the vendored disputed-areas file. Their
+// polygons overlap the de-jure parent, so the globe draws them as a
+// dash-bordered overlay. Kept to states with actual separate administration —
+// claim areas like Kashmir or the Golan Heights are deliberately not included.
+const DISPUTED_IDS = new Set(["abkhazia", "south-ossetia", "transnistria"]);
 
 // Dependencies and self-governing territories: id → administering country's
 // catalog id. Drives kind: "territory" and the "(parent)" hint in the picker;
@@ -93,6 +117,8 @@ const TERRITORY_PARENTS = {
   234: "208", // Faroe Islands
   // Finland (246)
   248: "246", // Åland Islands
+  // United Kingdom (spliced from 10m)
+  292: "826", // Gibraltar
   // China (156)
   344: "156", // Hong Kong
   446: "156", // Macau
@@ -288,6 +314,10 @@ const REGIONS = {
   "258": "Oceania", "876": "Oceania", "184": "Oceania", "570": "Oceania", "574": "Oceania",
   "776": "Oceania", "882": "Oceania", "296": "Oceania", "520": "Oceania",
   "585": "Oceania", "583": "Oceania", "584": "Oceania",
+  // — spliced from 10m —
+  "292": "Southern Europe", "798": "Oceania",
+  // — de-facto states —
+  "abkhazia": "Caucasus", "south-ossetia": "Caucasus", "transnistria": "Eastern Europe",
 };
 
 // Natural Earth abbreviates some names; spell them out for the picker/book.
@@ -361,40 +391,61 @@ function labelPoint(geom) {
   return [Math.round(lon * 10) / 10, Math.round(lat * 10) / 10];
 }
 
-// ---- clean the topology: drop excluded features, bake in normalized ids ----
+// ---- merge the sources into one topology ----
+// Base map: decode 50m, drop excluded features, bake in normalized ids.
 const excludedSeen = new Set();
-const geometries = topo.objects.countries.geometries.filter((g) => {
-  if (!EXCLUDED_FEATURES.has(g.properties?.name)) return true;
-  excludedSeen.add(g.properties.name);
+const baseFeatures = feature(topo50, topo50.objects.countries).features.filter((f) => {
+  if (!EXCLUDED_FEATURES.has(f.properties?.name)) return true;
+  excludedSeen.add(f.properties.name);
   return false;
 });
 for (const name of EXCLUDED_FEATURES) {
   if (!excludedSeen.has(name))
     throw new Error('EXCLUDED_FEATURES entry "' + name + '" matches no feature — stale after a dataset change?');
 }
-const seenIds = new Set();
-for (const g of geometries) {
-  g.id = normId(g.id, g.properties?.name);
-  if (seenIds.has(g.id))
-    throw new Error("Duplicate feature id " + g.id + " (" + g.properties?.name + ") — exclude or re-id one of them");
-  seenIds.add(g.id);
+for (const f of baseFeatures) f.id = normId(f.id, f.properties?.name);
+
+// Splices: places only the 10m dataset has.
+const spliced = feature(topo10, topo10.objects.countries)
+  .features.filter((f) => f.id != null && SPLICED_FROM_10M.has(normId(f.id, f.properties?.name)))
+  .map((f) => ({ ...f, id: normId(f.id, f.properties?.name) }));
+if (spliced.length !== SPLICED_FROM_10M.size)
+  throw new Error("SPLICED_FROM_10M: expected " + SPLICED_FROM_10M.size + " features in countries-10m, found " + spliced.length);
+
+// De-facto states from the vendored file; ids and names ship in the file.
+const here = dirname(fileURLToPath(import.meta.url));
+const disputed = JSON.parse(readFileSync(join(here, "data", "disputed-areas.geojson"), "utf8")).features;
+for (const f of disputed) {
+  if (!DISPUTED_IDS.has(f.id))
+    throw new Error("disputed-areas.geojson feature " + f.id + " is not in DISPUTED_IDS");
 }
-// Only the countries object survives (the globe never draws "land"); arcs are
-// shared with it, so they're kept whole.
-const cleanTopo = {
-  type: "Topology",
-  bbox: topo.bbox,
-  transform: topo.transform,
-  objects: { countries: { type: "GeometryCollection", geometries } },
-  arcs: topo.arcs,
-};
+if (disputed.length !== DISPUTED_IDS.size)
+  throw new Error("DISPUTED_IDS: expected " + DISPUTED_IDS.size + " features in disputed-areas.geojson, found " + disputed.length);
+
+// Disputed overlays go last: the globe draws in array order (so they paint on
+// top of their de-jure parent) and hit-tests in reverse (so they win clicks).
+const allFeatures = [...baseFeatures, ...spliced, ...disputed];
+const seenIds = new Set();
+for (const f of allFeatures) {
+  if (seenIds.has(f.id))
+    throw new Error("Duplicate feature id " + f.id + " (" + f.properties?.name + ") — exclude or re-id one of them");
+  seenIds.add(f.id);
+}
+
+// Re-encode at world-atlas's own quantization. Coordinates decoded from the
+// same source stay identical, so shared borders dedupe back into shared arcs.
+const cleanTopo = topology(
+  { countries: { type: "FeatureCollection", features: allFeatures } },
+  1e5,
+);
+const geometries = cleanTopo.objects.countries.geometries;
 
 // ---- build the catalog from the cleaned topology ----
 const fc = feature(cleanTopo, cleanTopo.objects.countries);
 const entries = [];
 for (const f of fc.features) {
   const id = f.id;
-  const kind = TERRITORY_PARENTS[id] ? "territory" : "country";
+  const kind = DISPUTED_IDS.has(id) ? "disputed" : TERRITORY_PARENTS[id] ? "territory" : "country";
   const parentId = TERRITORY_PARENTS[id];
   const curated = CURATED.get(id);
   if (curated) {
@@ -448,10 +499,11 @@ const lines = entries.map(
 );
 const regionLines = REGION_NAMES.map((r) => `  ${JSON.stringify(r)},`);
 const territoryCount = entries.filter((e) => e.kind === "territory").length;
+const disputedCount = entries.filter((e) => e.kind === "disputed").length;
 const out = `// GENERATED FILE — do not edit by hand. Run: npm run countries:generate
-// Built from the same cleaned countries-50m topology the globe draws
-// (atlasTopo.generated.ts), so every place on the map is loggable.
-// ${entries.length} places: ${entries.length - territoryCount} countries, ${territoryCount} territories.
+// Built from the same merged topology the globe draws (atlasTopo.generated.ts),
+// so every place on the map is loggable. ${entries.length} places:
+// ${entries.length - territoryCount - disputedCount} countries, ${territoryCount} territories, ${disputedCount} de-facto states.
 
 import type { CatalogCountry } from "./countries";
 
@@ -468,7 +520,6 @@ ${lines.join("\n")}
 ];
 `;
 
-const here = dirname(fileURLToPath(import.meta.url));
 const dest = join(here, "..", "src", "lib", "countryCatalog.generated.ts");
 writeFileSync(dest, out);
 console.log("Wrote " + entries.length + " places to " + dest);
@@ -478,10 +529,13 @@ console.log("Wrote " + entries.length + " places to " + dest);
 // big JSON faster than an equivalent object literal.
 const topoJson = JSON.stringify(cleanTopo);
 const topoOut = `// GENERATED FILE — do not edit by hand. Run: npm run countries:generate
-// world-atlas/countries-50m topology, cleaned for the app: excluded features
-// dropped and catalog ids (ISO numeric unpadded / synthetic slugs) baked into
-// every geometry. ${geometries.length} features. The globe and quiz draw this;
-// the country catalog is generated from it, so map and picker always match.
+// The app's merged atlas topology: world-atlas/countries-50m (cleaned) +
+// features spliced from countries-10m + vendored de-facto states, with
+// catalog ids (ISO numeric unpadded / synthetic slugs) baked into every
+// geometry. ${geometries.length} features; disputed overlays sit last so they
+// draw on top of their de-jure parent and win reverse-order hit-tests. The
+// globe and quiz draw this; the country catalog is generated from it, so map
+// and picker always match.
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const topology: any = JSON.parse(${JSON.stringify(topoJson)});
