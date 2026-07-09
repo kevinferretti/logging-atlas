@@ -862,6 +862,9 @@ export class PassportBook {
     const byRow = e.by
       ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:#6B6154;margin-top:2px;">' + esc(subLine(e)) + "</div>"
       : "";
+    const starsRow = e.rating
+      ? '<div style="font-size:11.5px;letter-spacing:2px;color:#8A5A3B;margin-top:4px;">' + "★".repeat(e.rating) + "☆".repeat(5 - e.rating) + "</div>"
+      : "";
     const noteRow = e.note
       ? '<div style="font-family:\'EB Garamond\',serif;font-size:13.5px;color:#4A4336;margin-top:7px;line-height:1.35;">' + esc(e.note) + "</div>"
       : "";
@@ -869,6 +872,7 @@ export class PassportBook {
       '<div style="font-family:\'Special Elite\',monospace;font-size:9px;letter-spacing:1.6px;text-transform:uppercase;color:' + ink + ';">' + this.CATL[e.category] + (e.wishlist ? " · ☆ WISH LIST" : " · '" + String(e.year).slice(2)) + "</div>" +
       '<div style="font-family:\'Marcellus\',serif;font-size:19px;color:#2E2A22;margin-top:3px;line-height:1.12;">' + esc(e.title) + "</div>" +
       byRow +
+      starsRow +
       noteRow +
       linkRow +
       '<div style="display:flex;gap:8px;margin-top:12px;">' +

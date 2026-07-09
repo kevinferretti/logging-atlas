@@ -9,7 +9,7 @@ import { countryPrefix } from "@/lib/countries";
 import { fmtCoord, subLine } from "@/lib/logbook";
 import { buildCountDisc } from "@/lib/stamps";
 import type { Entry } from "@/lib/types";
-import { DISPLAY, MONO, SERIF, entryDateParts, fileHref, linkHost, splitEntries, type VariantProps } from "./shared";
+import { DISPLAY, MONO, SERIF, entryDateParts, fileHref, linkHost, ratingStars, splitEntries, type VariantProps } from "./shared";
 
 const COLS = "44px 84px 1fr 92px 150px 52px";
 
@@ -76,6 +76,7 @@ function Row({ e, no, onEdit, onDelete }: { e: Entry; no: string; onEdit: (id: s
   const sub = subLine(e);
   const file = fileHref(e);
   const d = entryDateParts(e);
+  const stars = ratingStars(e);
   return (
     <div style={{ display: "grid", gridTemplateColumns: COLS, gap: 12, alignItems: "baseline", padding: "13px 6px", borderBottom: e.wishlist ? "1px dashed var(--line)" : "1px solid var(--line)" }}>
       <div style={{ fontFamily: MONO, fontSize: 11, color: "var(--ink-soft)" }}>{no}</div>
@@ -87,6 +88,7 @@ function Row({ e, no, onEdit, onDelete }: { e: Entry; no: string; onEdit: (id: s
       <div style={{ minWidth: 0 }}>
         <div style={{ fontFamily: DISPLAY, fontSize: 18, color: "var(--ink)", fontStyle: e.wishlist ? "italic" : "normal" }}>{e.title}</div>
         {sub && <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 14, color: "var(--ink-soft)", marginTop: 1 }}>{sub}</div>}
+        {stars && <div style={{ fontSize: 11, letterSpacing: 2, color: "var(--sepia)", marginTop: 2 }}>{stars}</div>}
         {e.note && <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 13.5, color: "var(--ink-soft)", opacity: 0.85, marginTop: 2 }}>“{e.note}”</div>}
       </div>
       <div style={{ fontFamily: MONO, fontSize: 11.5, color: "var(--ink)" }}>{e.wishlist ? "—" : d ? `${d.day}.${d.monthNo}.${d.year}` : e.year}</div>

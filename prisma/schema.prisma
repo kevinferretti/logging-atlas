@@ -46,6 +46,8 @@ model Entry {
   // `year` is derived from it at write time and stays the grouping field.
   date      String   @default("")
   year      Int
+  // Review rating, 1–5 stars; null = unrated.
+  rating    Int?
   // Optional attachment (currently used for recipe uploads). The file is stored
   // on the persistent volume under UPLOAD_DIR; fileKey is its on-disk name.
   fileName  String?

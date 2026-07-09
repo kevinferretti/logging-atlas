@@ -13,6 +13,8 @@ export interface Entry {
   /** Logged-for date as "yyyy-mm-dd"; "" on entries that predate the field. */
   date: string;
   year: number;
+  /** Review rating, 1–5 stars; null = unrated. */
+  rating: number | null;
   fileName: string | null;
   fileKey: string | null;
   fileType: string | null;
@@ -52,4 +54,6 @@ export interface NewEntryInput {
   link: string;
   /** "yyyy-mm-dd" from the date picker. */
   date: string;
+  /** 1–5 stars; null = unrated. */
+  rating: number | null;
 }

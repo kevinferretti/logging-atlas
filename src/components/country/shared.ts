@@ -56,6 +56,11 @@ export function entryDateParts(e: Entry): { day: string; month: string; monthNo:
   return m && month ? { day: m[3], month, monthNo: m[2], year: m[1] } : null;
 }
 
+/** "★★★☆☆" for a rated entry, or null when unrated. */
+export function ratingStars(e: Entry): string | null {
+  return e.rating ? "★".repeat(e.rating) + "☆".repeat(5 - e.rating) : null;
+}
+
 /** URL of an entry's uploaded file, or null when it has none. */
 export function fileHref(e: Entry): string | null {
   return e.fileKey ? "/api/files/" + e.fileKey : null;

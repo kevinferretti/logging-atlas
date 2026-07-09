@@ -7,7 +7,7 @@
 import { category } from "@/lib/categories";
 import { fmtCoord, subLine } from "@/lib/logbook";
 import type { Entry } from "@/lib/types";
-import { DISPLAY, MONO, SERIF, entryDateParts, fileHref, linkHost, splitEntries, type VariantProps } from "./shared";
+import { DISPLAY, MONO, SERIF, entryDateParts, fileHref, linkHost, ratingStars, splitEntries, type VariantProps } from "./shared";
 
 export default function JournalVariant({ country: c, onBack, onPassport, onAdd, onEdit, onDelete }: VariantProps) {
   const { logs, wishes } = splitEntries(c);
@@ -75,6 +75,7 @@ function JEntry({ e, hollow, onEdit, onDelete }: { e: Entry; hollow: boolean; on
   const file = fileHref(e);
   // The year is already the waypoint heading, so the line shows only day+month.
   const d = hollow ? null : entryDateParts(e);
+  const stars = ratingStars(e);
   return (
     <div style={{ position: "relative", margin: "14px 0 22px" }}>
       <div
@@ -96,6 +97,7 @@ function JEntry({ e, hollow, onEdit, onDelete }: { e: Entry; hollow: boolean; on
           </span>
           <div style={{ fontFamily: DISPLAY, fontSize: 20, lineHeight: 1.2, color: "var(--ink)", marginTop: 2, fontStyle: hollow ? "italic" : "normal" }}>{e.title}</div>
           {sub && <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 14.5, color: "var(--ink-soft)", marginTop: 2 }}>{sub}</div>}
+          {stars && <div style={{ fontSize: 11.5, letterSpacing: 2, color: "var(--sepia)", marginTop: 3 }}>{stars}</div>}
           {e.note && <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 14.5, color: "var(--ink-soft)", opacity: 0.9, marginTop: 5 }}>“{e.note}”</div>}
           <div style={{ display: "flex", gap: 12, marginTop: 5 }}>
             {e.link && (

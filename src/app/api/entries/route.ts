@@ -63,6 +63,7 @@ export async function POST(req: Request) {
       link: data.link,
       date,
       year,
+      rating: data.rating,
       ...fileFields,
     },
     select: ENTRY_SELECT,

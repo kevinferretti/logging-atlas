@@ -8,7 +8,7 @@ import { CATEGORIES, category } from "@/lib/categories";
 import { fmtCoord, subLine } from "@/lib/logbook";
 import { buildEntryStamp } from "@/lib/inkstamps";
 import type { CategoryKey, Entry } from "@/lib/types";
-import { DISPLAY, MONO, SERIF, entryDateParts, fileHref, linkHost, splitEntries, type VariantProps } from "./shared";
+import { DISPLAY, MONO, SERIF, entryDateParts, fileHref, linkHost, ratingStars, splitEntries, type VariantProps } from "./shared";
 
 export default function DossierVariant({ country: c, dark, onBack, onPassport, onAdd, onEdit, onDelete }: VariantProps) {
   const { logs, wishes } = splitEntries(c);
@@ -132,12 +132,14 @@ function Exhibit({ e, no, onEdit, onDelete }: { e: Entry; no: string; onEdit: (i
   const sub = subLine(e);
   const file = fileHref(e);
   const d = entryDateParts(e);
+  const stars = ratingStars(e);
   return (
     <div style={{ display: "flex", justifyContent: "space-between", gap: 16, padding: "16px 2px", borderBottom: "1px dotted var(--line)" }}>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: 2, color: "var(--ink-soft)" }}>
           EXHIBIT {no} · <span style={{ color: cat?.color }}>{cat?.one.toUpperCase()}</span>
           {e.wishlist ? " · ☆ WISH LIST" : d ? ` · ${d.day} ${d.month} ${d.year}` : ` · ${e.year}`}
+          {stars && <> · <span style={{ color: "var(--sepia)", letterSpacing: 1 }}>{stars}</span></>}
         </div>
         <div style={{ fontFamily: "'Courier Prime',monospace", fontWeight: 700, fontSize: 16.5, color: "var(--ink)", marginTop: 4, fontStyle: e.wishlist ? "italic" : "normal" }}>
           {e.title}

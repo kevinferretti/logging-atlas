@@ -36,6 +36,7 @@ export default function LogModal({ initialCountryId, entry, onClose, onSave }: L
   // Editing keeps the stored date — even blank on entries that predate the
   // field (the API preserves it); a blank date on create means today.
   const [date, setDate] = useState(editing ? editing.date : todayISO());
+  const [rating, setRating] = useState<number | null>(editing?.rating ?? null);
   const [file, setFile] = useState<File | null>(null);
   const [removeFile, setRemoveFile] = useState(false);
   // Which submit button is in flight — the two Add buttons share the form.
@@ -51,7 +52,7 @@ export default function LogModal({ initialCountryId, entry, onClose, onSave }: L
     setError(null);
     try {
       await onSave(
-        { countryId, category, wishlist: wish, title: t, by: by.trim(), note: note.trim(), link: link.trim(), date },
+        { countryId, category, wishlist: wish, title: t, by: by.trim(), note: note.trim(), link: link.trim(), date, rating },
         category === "recipe" ? file : null,
         removeFile,
       );
@@ -129,6 +130,30 @@ export default function LogModal({ initialCountryId, entry, onClose, onSave }: L
         <input value={by} onChange={(e) => setBy(e.target.value)} onKeyDown={submitOnEnter} placeholder={BY_PLACEHOLDER[category]} maxLength={FIELD_LIMITS.by} style={inputStyle} />
         <input value={note} onChange={(e) => setNote(e.target.value)} onKeyDown={submitOnEnter} placeholder="Note (optional)" maxLength={FIELD_LIMITS.note} style={inputStyle} />
         <input value={link} onChange={(e) => setLink(e.target.value)} onKeyDown={submitOnEnter} placeholder="Link (optional)" style={inputStyle} />
+        <div style={labelStyle}>
+          Rating
+          <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button
+                key={n}
+                onClick={() => setRating(rating === n ? null : n)}
+                title={rating === n ? "Clear rating" : `${n} star${n > 1 ? "s" : ""}`}
+                aria-label={`${n} star${n > 1 ? "s" : ""}`}
+                style={{ background: "none", border: "none", cursor: "pointer", padding: "0 3px", fontSize: 24, lineHeight: 1, color: rating != null && n <= rating ? "var(--sepia)" : "var(--line)" }}
+              >
+                {rating != null && n <= rating ? "★" : "☆"}
+              </button>
+            ))}
+            {rating != null && (
+              <button
+                onClick={() => setRating(null)}
+                style={{ background: "none", border: "none", cursor: "pointer", marginLeft: 8, padding: 0, fontFamily: "'Special Elite',monospace", fontSize: 9.5, letterSpacing: 1, textTransform: "uppercase", color: "var(--ink-soft)" }}
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
         <label style={labelStyle}>
           Date
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle} />

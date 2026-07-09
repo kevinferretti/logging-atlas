@@ -16,6 +16,7 @@ export const ENTRY_SELECT = {
   link: true,
   date: true,
   year: true,
+  rating: true,
   fileName: true,
   fileKey: true,
   fileType: true,
@@ -32,6 +33,7 @@ export type EntryRow = {
   link: string;
   date: string;
   year: number;
+  rating: number | null;
   fileName: string | null;
   fileKey: string | null;
   fileType: string | null;
@@ -77,6 +79,8 @@ export interface ParsedEntryForm {
    * the fallback (today on create, the stored date on edit).
    */
   date: string | null;
+  /** Review rating 1–5, or null when unrated (or out of range). */
+  rating: number | null;
 }
 
 /** Validate the log-modal FormData; returns the shaped fields or an error message. */
@@ -99,6 +103,10 @@ export function parseEntryForm(form: FormData): { data: ParsedEntryForm } | { er
     date = null;
   }
 
+  // Anything but a whole number of stars in range reads as unrated.
+  const ratingRaw = formString(form, "rating");
+  const rating = /^[1-5]$/.test(ratingRaw) ? Number(ratingRaw) : null;
+
   return {
     data: {
       countryId,
@@ -109,6 +117,7 @@ export function parseEntryForm(form: FormData): { data: ParsedEntryForm } | { er
       note: cap(formString(form, "note"), FIELD_LIMITS.note),
       link: normalizeLink(formString(form, "link")),
       date,
+      rating,
     },
   };
 }
