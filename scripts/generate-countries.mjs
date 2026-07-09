@@ -1,12 +1,18 @@
-// Generates src/lib/countryCatalog.generated.ts from world-atlas/countries-110m.json —
-// the same TopoJSON the globe draws — so every country on the map is loggable.
+// Generates, from world-atlas/countries-50m.json, the two artifacts every map
+// consumer shares:
+//
+//   src/lib/atlasTopo.generated.ts      — cleaned topology the globe & quiz draw
+//   src/lib/countryCatalog.generated.ts — the loggable catalog
 //
 //   node scripts/generate-countries.mjs   (or: npm run countries:generate)
 //
-// Ids are ISO 3166-1 numeric with leading zeros stripped (matching how the app
-// normalizes world-atlas feature ids). Three features ship without an id
-// (partially recognized states); they get the synthetic ids below, which
-// Globe.tsx assigns to the matching features by name.
+// The topology is derived rather than used raw because the 50m dataset needs
+// surgery: a few features are dropped (see EXCLUDED_FEATURES — one of them
+// shares Australia's ISO id and would shadow it in every by-id lookup), ids
+// are normalized to their catalog form (ISO 3166-1 numeric, leading zeros
+// stripped), and the features without an ISO id (partially recognized states)
+// get their synthetic ids baked in. Building the catalog from the same cleaned
+// topology keeps the map and the picker matched by construction.
 //
 // Label coordinates: hand-tuned values in CURATED win; everything else uses the
 // spherical centroid of the country's largest polygon (avoids centroids pulled
@@ -20,12 +26,82 @@ import { geoArea, geoCentroid } from "d3-geo";
 import { feature } from "topojson-client";
 
 const require = createRequire(import.meta.url);
-const topo = require("world-atlas/countries-110m.json");
+const topo = require("world-atlas/countries-50m.json");
 
 const SYNTHETIC_IDS = {
   Kosovo: "kosovo",
   Somaliland: "somaliland",
   "N. Cyprus": "n-cyprus",
+};
+
+// Features cut from the map entirely, matched by name (two of them have no id,
+// and Ashmore reuses Australia's). Removing a name from this set makes it a
+// loggable place again — everything downstream is generated.
+const EXCLUDED_FEATURES = new Set([
+  // Uninhabited Australian external territories that Natural Earth tags with
+  // Australia's own ISO id (036); kept, they'd shadow Australia in the
+  // by-id bounds/feature maps the globe and quiz build.
+  "Ashmore and Cartier Is.",
+  // Christmas + Cocos islands, also id-less in this dataset.
+  "Indian Ocean Ter.",
+  // A contested glacier, not a loggable destination.
+  "Siachen Glacier",
+]);
+
+// Dependencies and self-governing territories: id → administering country's
+// catalog id. Drives kind: "territory" and the "(parent)" hint in the picker;
+// deliberately display-only — territories count in every tally like countries.
+// De-facto states (Taiwan, Kosovo, Somaliland, N. Cyprus, W. Sahara,
+// Palestine) are left as kind "country": they answer to no administering
+// state, and pinning a parent on them would be a political claim, not a fact.
+const TERRITORY_PARENTS = {
+  // United States (840)
+  630: "840", // Puerto Rico
+  850: "840", // U.S. Virgin Islands
+  316: "840", // Guam
+  16: "840", // American Samoa
+  580: "840", // Northern Mariana Islands
+  // United Kingdom (826) — overseas territories and Crown dependencies
+  238: "826", // Falkland Islands
+  239: "826", // South Georgia
+  86: "826", // British Indian Ocean Territory
+  654: "826", // Saint Helena
+  612: "826", // Pitcairn Islands
+  660: "826", // Anguilla
+  136: "826", // Cayman Islands
+  60: "826", // Bermuda
+  92: "826", // British Virgin Islands
+  796: "826", // Turks and Caicos Islands
+  500: "826", // Montserrat
+  832: "826", // Jersey
+  831: "826", // Guernsey
+  833: "826", // Isle of Man
+  // Netherlands (528) — constituent countries of the Kingdom
+  533: "528", // Aruba
+  531: "528", // Curaçao
+  534: "528", // Sint Maarten
+  // France (250)
+  540: "250", // New Caledonia
+  260: "250", // French Southern Lands
+  258: "250", // French Polynesia
+  666: "250", // Saint Pierre and Miquelon
+  876: "250", // Wallis and Futuna
+  663: "250", // Saint-Martin
+  652: "250", // Saint-Barthélemy
+  // Denmark (208)
+  304: "208", // Greenland
+  234: "208", // Faroe Islands
+  // Finland (246)
+  248: "246", // Åland Islands
+  // China (156)
+  344: "156", // Hong Kong
+  446: "156", // Macau
+  // New Zealand (554)
+  184: "554", // Cook Islands
+  570: "554", // Niue
+  // Australia (36)
+  334: "36", // Heard and McDonald Islands
+  574: "36", // Norfolk Island
 };
 
 // Hand-tuned entries (the original catalog) — kept exactly: names, region
@@ -137,6 +213,7 @@ const REGION_NAMES = [
   "Oceania",
   "Antarctica",
   "Indian Ocean",
+  "South Atlantic",
 ];
 
 // Region labels for everything not in CURATED. Every feature in the dataset
@@ -184,6 +261,33 @@ const REGIONS = {
   // Oceania & the rest
   "242": "Oceania", "598": "Oceania", "548": "Oceania", "540": "Oceania", "90": "Oceania",
   "10": "Antarctica", "260": "Indian Ocean",
+  // — 50m additions —
+  // Europe's microstates and near islands
+  "336": "Southern Europe", "674": "Southern Europe", "470": "Southern Europe", "20": "Southern Europe",
+  "492": "Western Europe", "438": "Central Europe",
+  "832": "Northern Europe", "831": "Northern Europe", "833": "Northern Europe",
+  "234": "Northern Europe", "248": "Northern Europe",
+  // Asia
+  "702": "Southeast Asia", "48": "Western Asia", "462": "South Asia",
+  "344": "East Asia", "446": "East Asia",
+  // Africa & the Indian Ocean
+  "132": "West Africa", "678": "Central Africa",
+  "174": "Indian Ocean", "480": "Indian Ocean", "690": "Indian Ocean",
+  "86": "Indian Ocean", "334": "Indian Ocean",
+  // Caribbean
+  "660": "Caribbean", "136": "Caribbean", "92": "Caribbean", "850": "Caribbean",
+  "796": "Caribbean", "500": "Caribbean", "533": "Caribbean", "531": "Caribbean",
+  "534": "Caribbean", "663": "Caribbean", "652": "Caribbean",
+  "52": "Caribbean", "212": "Caribbean", "308": "Caribbean", "662": "Caribbean",
+  "659": "Caribbean", "670": "Caribbean", "28": "Caribbean",
+  // North America & the South Atlantic
+  "60": "North America", "666": "North America",
+  "654": "South Atlantic", "239": "South Atlantic",
+  // Oceania
+  "316": "Oceania", "16": "Oceania", "580": "Oceania", "612": "Oceania",
+  "258": "Oceania", "876": "Oceania", "184": "Oceania", "570": "Oceania", "574": "Oceania",
+  "776": "Oceania", "882": "Oceania", "296": "Oceania", "520": "Oceania",
+  "585": "Oceania", "583": "Oceania", "584": "Oceania",
 };
 
 // Natural Earth abbreviates some names; spell them out for the picker/book.
@@ -201,6 +305,31 @@ const NAMES = {
   "807": "North Macedonia",
   "748": "Eswatini",
   "n-cyprus": "Northern Cyprus",
+  // — 50m additions —
+  "336": "Vatican City",
+  "584": "Marshall Islands",
+  "580": "Northern Mariana Islands",
+  "850": "U.S. Virgin Islands",
+  "239": "South Georgia & the Sandwich Islands",
+  "86": "British Indian Ocean Territory",
+  "612": "Pitcairn Islands",
+  "136": "Cayman Islands",
+  "92": "British Virgin Islands",
+  "796": "Turks and Caicos Islands",
+  "670": "Saint Vincent and the Grenadines",
+  "659": "Saint Kitts and Nevis",
+  "184": "Cook Islands",
+  "666": "Saint Pierre and Miquelon",
+  "876": "Wallis and Futuna",
+  "258": "French Polynesia",
+  "234": "Faroe Islands",
+  "248": "Åland Islands",
+  "334": "Heard and McDonald Islands",
+  "28": "Antigua and Barbuda",
+  "678": "São Tomé and Príncipe",
+  "663": "Saint-Martin",
+  "652": "Saint-Barthélemy",
+  "446": "Macau",
 };
 
 function normId(raw, name) {
@@ -232,19 +361,50 @@ function labelPoint(geom) {
   return [Math.round(lon * 10) / 10, Math.round(lat * 10) / 10];
 }
 
-const fc = feature(topo, topo.objects.countries);
+// ---- clean the topology: drop excluded features, bake in normalized ids ----
+const excludedSeen = new Set();
+const geometries = topo.objects.countries.geometries.filter((g) => {
+  if (!EXCLUDED_FEATURES.has(g.properties?.name)) return true;
+  excludedSeen.add(g.properties.name);
+  return false;
+});
+for (const name of EXCLUDED_FEATURES) {
+  if (!excludedSeen.has(name))
+    throw new Error('EXCLUDED_FEATURES entry "' + name + '" matches no feature — stale after a dataset change?');
+}
+const seenIds = new Set();
+for (const g of geometries) {
+  g.id = normId(g.id, g.properties?.name);
+  if (seenIds.has(g.id))
+    throw new Error("Duplicate feature id " + g.id + " (" + g.properties?.name + ") — exclude or re-id one of them");
+  seenIds.add(g.id);
+}
+// Only the countries object survives (the globe never draws "land"); arcs are
+// shared with it, so they're kept whole.
+const cleanTopo = {
+  type: "Topology",
+  bbox: topo.bbox,
+  transform: topo.transform,
+  objects: { countries: { type: "GeometryCollection", geometries } },
+  arcs: topo.arcs,
+};
+
+// ---- build the catalog from the cleaned topology ----
+const fc = feature(cleanTopo, cleanTopo.objects.countries);
 const entries = [];
 for (const f of fc.features) {
-  const id = normId(f.id, f.properties?.name);
+  const id = f.id;
+  const kind = TERRITORY_PARENTS[id] ? "territory" : "country";
+  const parentId = TERRITORY_PARENTS[id];
   const curated = CURATED.get(id);
   if (curated) {
-    entries.push(curated);
+    entries.push({ ...curated, kind, parentId });
     continue;
   }
   const region = REGIONS[id];
   if (!region) throw new Error("No region label for " + id + " (" + f.properties?.name + ") — add it to REGIONS");
   const [lon, lat] = labelPoint(f.geometry);
-  entries.push({ id, name: NAMES[id] ?? f.properties.name, region, lon, lat });
+  entries.push({ id, name: NAMES[id] ?? f.properties.name, region, kind, parentId, lon, lat });
 }
 
 // Every region label — curated or mapped — must come from the canonical
@@ -261,25 +421,37 @@ for (const name of REGION_NAMES) {
     throw new Error('REGION_NAMES entry "' + name + '" is not used by any country — remove it');
 }
 
-// Catch stale CURATED/REGIONS/NAMES keys after a dataset change.
+// Catch stale CURATED/REGIONS/NAMES/TERRITORY_PARENTS keys after a dataset change.
 const ids = new Set(entries.map((e) => e.id));
-for (const key of [...CURATED.keys(), ...Object.keys(REGIONS), ...Object.keys(NAMES)]) {
+for (const key of [...CURATED.keys(), ...Object.keys(REGIONS), ...Object.keys(NAMES), ...Object.keys(TERRITORY_PARENTS)]) {
   if (!ids.has(key))
     throw new Error(
-      "CURATED/REGIONS/NAMES key " + key + " matches no feature in countries-110m. If the id was retired " +
+      "CURATED/REGIONS/NAMES/TERRITORY_PARENTS key " + key + " matches no feature in countries-50m. If the id was retired " +
         "and users may have logged entries under it, add a migration to LEGACY_COUNTRY_IDS in src/lib/countries.ts.",
     );
+}
+
+// A territory's parent must be a catalog country — not missing, not itself a
+// territory (chains would make the picker's "(parent)" hint recursive).
+const byId = new Map(entries.map((e) => [e.id, e]));
+for (const [id, parentId] of Object.entries(TERRITORY_PARENTS)) {
+  const parent = byId.get(parentId);
+  if (!parent) throw new Error("Territory " + id + " has unknown parent " + parentId);
+  if (parent.kind !== "country") throw new Error("Territory " + id + " has non-country parent " + parent.name);
 }
 
 entries.sort((a, b) => a.name.localeCompare(b.name, "en"));
 
 const lines = entries.map(
-  (e) => `  { id: ${JSON.stringify(e.id)}, name: ${JSON.stringify(e.name)}, region: ${JSON.stringify(e.region)}, lon: ${e.lon}, lat: ${e.lat} },`,
+  (e) =>
+    `  { id: ${JSON.stringify(e.id)}, name: ${JSON.stringify(e.name)}, region: ${JSON.stringify(e.region)}, kind: ${JSON.stringify(e.kind)},${e.parentId ? ` parentId: ${JSON.stringify(e.parentId)},` : ""} lon: ${e.lon}, lat: ${e.lat} },`,
 );
 const regionLines = REGION_NAMES.map((r) => `  ${JSON.stringify(r)},`);
+const territoryCount = entries.filter((e) => e.kind === "territory").length;
 const out = `// GENERATED FILE — do not edit by hand. Run: npm run countries:generate
-// Built from world-atlas/countries-110m.json (the dataset the globe draws), so
-// every country on the map is loggable. ${entries.length} countries.
+// Built from the same cleaned countries-50m topology the globe draws
+// (atlasTopo.generated.ts), so every place on the map is loggable.
+// ${entries.length} places: ${entries.length - territoryCount} countries, ${territoryCount} territories.
 
 import type { CatalogCountry } from "./countries";
 
@@ -296,6 +468,25 @@ ${lines.join("\n")}
 ];
 `;
 
-const dest = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "lib", "countryCatalog.generated.ts");
+const here = dirname(fileURLToPath(import.meta.url));
+const dest = join(here, "..", "src", "lib", "countryCatalog.generated.ts");
 writeFileSync(dest, out);
-console.log("Wrote " + entries.length + " countries to " + dest);
+console.log("Wrote " + entries.length + " places to " + dest);
+
+// The topology ships as JSON.parse of a string literal: tsc sees one string
+// token instead of inferring a type over ~750KB of coordinates, and V8 parses
+// big JSON faster than an equivalent object literal.
+const topoJson = JSON.stringify(cleanTopo);
+const topoOut = `// GENERATED FILE — do not edit by hand. Run: npm run countries:generate
+// world-atlas/countries-50m topology, cleaned for the app: excluded features
+// dropped and catalog ids (ISO numeric unpadded / synthetic slugs) baked into
+// every geometry. ${geometries.length} features. The globe and quiz draw this;
+// the country catalog is generated from it, so map and picker always match.
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const topology: any = JSON.parse(${JSON.stringify(topoJson)});
+export default topology;
+`;
+const topoDest = join(here, "..", "src", "lib", "atlasTopo.generated.ts");
+writeFileSync(topoDest, topoOut);
+console.log("Wrote " + geometries.length + " features (" + Math.round(topoOut.length / 1024) + "KB) to " + topoDest);

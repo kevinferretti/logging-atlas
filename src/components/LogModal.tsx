@@ -3,8 +3,15 @@
 import { useState } from "react";
 import type { CSSProperties } from "react";
 import { CATEGORIES } from "@/lib/categories";
-import { COUNTRY_CATALOG_SORTED } from "@/lib/countries";
+import { COUNTRY_CATALOG_SORTED, countryLabel } from "@/lib/countries";
 import { FIELD_LIMITS, type CategoryKey, type Entry, type NewEntryInput } from "@/lib/types";
+
+// Both country selects group sovereign states above dependencies/territories;
+// territory labels carry the administering country ("Bermuda (United Kingdom)").
+const PICKER_GROUPS = [
+  ["Countries", COUNTRY_CATALOG_SORTED.filter((c) => c.kind === "country")],
+  ["Territories & dependencies", COUNTRY_CATALOG_SORTED.filter((c) => c.kind === "territory")],
+] as const;
 
 interface LogModalProps {
   /** Preselect this country (set when the modal opens from a map click). */
@@ -103,10 +110,14 @@ export default function LogModal({ initialCountryId, entry, onClose, onSave }: L
             }}
             style={{ ...inputStyle, cursor: "pointer" }}
           >
-            {COUNTRY_CATALOG_SORTED.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
+            {PICKER_GROUPS.map(([label, list]) => (
+              <optgroup key={label} label={label}>
+                {list.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {countryLabel(c)}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
           {extraCountryIds.length > 0 && (
@@ -134,10 +145,16 @@ export default function LogModal({ initialCountryId, entry, onClose, onSave }: L
             style={{ ...inputStyle, cursor: "pointer", color: "var(--ink-soft)" }}
           >
             <option value="">＋ Also covers… (optional)</option>
-            {COUNTRY_CATALOG_SORTED.filter((c) => c.id !== countryId && !extraCountryIds.includes(c.id)).map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
+            {PICKER_GROUPS.map(([label, list]) => (
+              <optgroup key={label} label={label}>
+                {list
+                  .filter((c) => c.id !== countryId && !extraCountryIds.includes(c.id))
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {countryLabel(c)}
+                    </option>
+                  ))}
+              </optgroup>
             ))}
           </select>
         </div>

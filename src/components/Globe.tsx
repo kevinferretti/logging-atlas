@@ -11,7 +11,7 @@ import {
   geoContains,
 } from "d3-geo";
 import { feature } from "topojson-client";
-import topoData from "world-atlas/countries-110m.json";
+import topoData from "@/lib/atlasTopo.generated";
 import { COUNTRY_CATALOG } from "@/lib/countries";
 import { escapeHtml as esc } from "@/lib/html";
 import type { Palette } from "@/lib/palettes";
@@ -28,23 +28,6 @@ interface GlobeProps {
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
-// world-atlas country ids are zero-padded ("076"); the catalog uses plain
-// numeric strings ("76"). Normalize both sides so they match. Synthetic ids
-// (non-numeric, see below) pass through unchanged.
-function normId(id: unknown): string {
-  const n = Number(id);
-  return Number.isFinite(n) ? String(n) : String(id ?? "");
-}
-
-// Three map features ship without an ISO numeric id (partially recognized
-// states). Assign them the synthetic ids the catalog uses so they highlight
-// and hit-test like everything else.
-const SYNTHETIC_IDS: Record<string, string> = {
-  Kosovo: "kosovo",
-  Somaliland: "somaliland",
-  "N. Cyprus": "n-cyprus",
-};
 
 const CAT_BY_ID = new Map(COUNTRY_CATALOG.map((c) => [c.id, c]));
 
@@ -139,8 +122,8 @@ class GlobeEngine {
     this.featById = {};
     this.boundsById = {};
     this.features.forEach((f) => {
-      if (f.id == null) f.id = SYNTHETIC_IDS[f.properties?.name] ?? "";
-      const id = normId(f.id);
+      // The generated topology bakes catalog ids into every feature.
+      const id = String(f.id);
       this.featById[id] = f;
       this.boundsById[id] = geoBounds(f);
     });
@@ -203,7 +186,9 @@ class GlobeEngine {
       this.ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
       const base = Math.min(w, h) * 0.42;
       this.minScale = base * 0.72;
-      this.maxScale = base * 2.6;
+      // Deep enough that the small territories (Bermuda, Hong Kong, Åland…)
+      // stop being single pixels; the 50m coastlines hold up at this zoom.
+      this.maxScale = base * 4.5;
       this.fitProjection();
       if (this.features.length) this.draw();
     };
@@ -298,7 +283,7 @@ class GlobeEngine {
     for (const f of this.features) {
       ctx.beginPath();
       path(f);
-      const rec = this.counts.get(normId(f.id));
+      const rec = this.counts.get(String(f.id));
       const logs = rec ? rec.logs : 0;
       ctx.fillStyle = logs > 0 ? this.heatColor(logs) : pal.land;
       ctx.fill();
@@ -358,7 +343,7 @@ class GlobeEngine {
       const onEarth = !!rt && Math.hypot(rt[0] - x, rt[1] - y) < 0.5;
       if (onEarth && lon >= -180 && lon <= 180 && lat >= -90 && lat <= 90) {
         for (const f of this.features) {
-          const id = normId(f.id);
+          const id = String(f.id);
           const b = this.boundsById[id];
           if (!b) continue;
           if (lat < b[0][1] || lat > b[1][1]) continue;

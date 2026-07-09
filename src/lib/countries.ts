@@ -1,7 +1,8 @@
-// Catalog of loggable countries — generated from world-atlas/countries-110m
-// (the same TopoJSON the globe draws) so the map and the picker always match.
-// Regenerate with `npm run countries:generate`; hand-tuned names/regions/label
-// coordinates live in scripts/generate-countries.mjs.
+// Catalog of loggable places — generated from the cleaned countries-50m
+// topology (the same one the globe draws, see atlasTopo.generated.ts) so the
+// map and the picker always match. Regenerate with `npm run countries:generate`;
+// hand-tuned names/regions/label coordinates and the territory classification
+// live in scripts/generate-countries.mjs.
 //
 // Ids are the world-atlas numeric country ids (ISO 3166-1 numeric, no leading
 // zeros), plus synthetic ids ("kosovo", "somaliland", "n-cyprus") for the three
@@ -9,10 +10,19 @@
 
 import { COUNTRY_CATALOG, REGION_NAMES, type Region } from "./countryCatalog.generated";
 
+// "territory" marks dependencies and self-governing territories (Bermuda,
+// Hong Kong, Åland…) — purely descriptive: they're logged, counted, quizzed,
+// and stamped exactly like countries, but the picker groups them separately
+// and shows their administering country.
+export type CountryKind = "country" | "territory";
+
 export interface CatalogCountry {
   id: string;
   name: string;
   region: Region;
+  kind: CountryKind;
+  /** Catalog id of the administering country; only set for kind "territory". */
+  parentId?: string;
   lon: number;
   lat: number;
 }
@@ -24,6 +34,12 @@ const byId = new Map(COUNTRY_CATALOG.map((c) => [c.id, c]));
 
 export function catalogCountry(id: string): CatalogCountry | undefined {
   return byId.get(id);
+}
+
+/** Picker label — territories carry their administering country: "Bermuda (United Kingdom)". */
+export function countryLabel(c: CatalogCountry): string {
+  const parent = c.parentId ? byId.get(c.parentId) : undefined;
+  return parent ? c.name + " (" + parent.name + ")" : c.name;
 }
 
 // Retired ids → successor ids. When a future world-atlas bump removes an id
@@ -196,6 +212,47 @@ const COUNTRY_PREFIX: Record<string, string> = {
   "894": "REPUBLIC OF", // Zambia
   kosovo: "REPUBLIC OF",
   somaliland: "REPUBLIC OF",
+  // — 50m additions —
+  "702": "REPUBLIC OF", // Singapore
+  "470": "REPUBLIC OF", // Malta
+  "674": "MOST SERENE REPUBLIC OF", // San Marino
+  "492": "PRINCIPALITY OF", // Monaco
+  "438": "PRINCIPALITY OF", // Liechtenstein
+  "20": "PRINCIPALITY OF", // Andorra
+  "48": "KINGDOM OF", // Bahrain
+  "462": "REPUBLIC OF", // Maldives
+  "480": "REPUBLIC OF", // Mauritius
+  "690": "REPUBLIC OF", // Seychelles
+  "174": "UNION OF THE", // Comoros
+  "132": "REPUBLIC OF", // Cabo Verde
+  "678": "DEMOCRATIC REPUBLIC OF", // São Tomé and Príncipe
+  "212": "COMMONWEALTH OF", // Dominica
+  "659": "FEDERATION OF", // Saint Kitts and Nevis
+  "776": "KINGDOM OF", // Tonga
+  "882": "INDEPENDENT STATE OF", // Samoa
+  "296": "REPUBLIC OF", // Kiribati
+  "520": "REPUBLIC OF", // Nauru
+  "585": "REPUBLIC OF", // Palau
+  "583": "FEDERATED STATES OF", // Micronesia
+  "584": "REPUBLIC OF THE", // Marshall Islands
+  "344": "SPECIAL ADMINISTRATIVE REGION OF", // Hong Kong
+  "446": "SPECIAL ADMINISTRATIVE REGION OF", // Macau
+  "832": "BAILIWICK OF", // Jersey
+  "831": "BAILIWICK OF", // Guernsey
+  "60": "BRITISH OVERSEAS TERRITORY OF", // Bermuda
+  "136": "BRITISH OVERSEAS TERRITORY OF THE", // Cayman Islands
+  "92": "BRITISH OVERSEAS TERRITORY OF THE", // British Virgin Islands
+  "796": "BRITISH OVERSEAS TERRITORY OF THE", // Turks and Caicos Islands
+  "660": "BRITISH OVERSEAS TERRITORY OF", // Anguilla
+  "500": "BRITISH OVERSEAS TERRITORY OF", // Montserrat
+  "654": "BRITISH OVERSEAS TERRITORY OF", // Saint Helena
+  "316": "UNITED STATES TERRITORY OF", // Guam
+  "850": "UNITED STATES TERRITORY OF THE", // U.S. Virgin Islands
+  "16": "UNITED STATES TERRITORY OF", // American Samoa
+  "580": "COMMONWEALTH OF THE", // Northern Mariana Islands
+  "258": "OVERSEAS COLLECTIVITY OF", // French Polynesia
+  "876": "OVERSEAS COLLECTIVITY OF", // Wallis and Futuna
+  "666": "OVERSEAS COLLECTIVITY OF", // Saint Pierre and Miquelon
 };
 
 export function countryPrefix(id: string): string {

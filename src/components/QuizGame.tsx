@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { geoNaturalEarth1, geoGraticule10, geoPath, geoBounds, geoContains } from "d3-geo";
 import { feature } from "topojson-client";
-import topoData from "world-atlas/countries-110m.json";
+import topoData from "@/lib/atlasTopo.generated";
 import { category } from "@/lib/categories";
 import { COUNTRY_CATALOG, catalogCountry } from "@/lib/countries";
 import { coveredCountryIds, subLine } from "@/lib/logbook";
@@ -30,18 +30,6 @@ interface RoundResult {
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-// Same id normalization as the globe: world-atlas pads numeric ids ("076"),
-// the catalog doesn't; synthetic ids pass through.
-function normId(id: unknown): string {
-  const n = Number(id);
-  return Number.isFinite(n) ? String(n) : String(id ?? "");
-}
-
-const SYNTHETIC_IDS: Record<string, string> = {
-  Kosovo: "kosovo",
-  Somaliland: "somaliland",
-  "N. Cyprus": "n-cyprus",
-};
 
 /**
  * Unlabeled flat map for the quiz. Deliberately withholds everything the main
@@ -82,8 +70,8 @@ class QuizMapEngine {
     const fc: any = feature(topoData, (topoData as any).objects.countries);
     this.features = fc.features;
     this.features.forEach((f) => {
-      if (f.id == null) f.id = SYNTHETIC_IDS[f.properties?.name] ?? "";
-      this.boundsById[normId(f.id)] = geoBounds(f);
+      // The generated topology bakes catalog ids into every feature.
+      this.boundsById[String(f.id)] = geoBounds(f);
     });
     this.graticule = geoGraticule10();
     this.projection = geoNaturalEarth1().precision(0.4);
@@ -156,7 +144,7 @@ class QuizMapEngine {
     ctx.stroke();
 
     for (const f of this.features) {
-      const id = normId(f.id);
+      const id = String(f.id);
       let fill = pal.land;
       let marked = false;
       if (res && id === res.answerId) {
@@ -176,7 +164,7 @@ class QuizMapEngine {
     }
 
     if (!res && this.hoveredId) {
-      const f = this.features.find((x) => normId(x.id) === this.hoveredId);
+      const f = this.features.find((x) => String(x.id) === this.hoveredId);
       if (f) {
         ctx.beginPath();
         path(f);
@@ -220,7 +208,7 @@ class QuizMapEngine {
       const [lon, lat] = inv;
       if (lon >= -180 && lon <= 180 && lat >= -90 && lat <= 90) {
         for (const f of this.features) {
-          const id = normId(f.id);
+          const id = String(f.id);
           const b = this.boundsById[id];
           if (!b) continue;
           if (lat < b[0][1] || lat > b[1][1]) continue;
