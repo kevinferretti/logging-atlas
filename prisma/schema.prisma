@@ -32,9 +32,11 @@ model Entry {
   id        String   @id @default(cuid())
   userId    String
   countryId String // world-atlas numeric country id, e.g. "392" for Japan
-  // Additional countries the entry covers (a book spanning several countries
-  // is logged once and appears under each). CSV of catalog ids, "" for none;
-  // countryId stays the primary and is never repeated here.
+  // Additional countries the entry covers (logged once, appears under each).
+  // For books/film/music these are the SUBJECT countries — what the work is
+  // about — while countryId is its origin; for recipes/places all covered
+  // countries read the same. CSV of catalog ids, "" for none; countryId stays
+  // the primary and is never repeated here.
   extraCountries String @default("")
   category  String // recipe | book | movie | music | place
   // Wish-list entries are things the user wants to do/make. They live in the

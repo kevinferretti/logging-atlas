@@ -1,3 +1,4 @@
+import { hasSubjects } from "./categories";
 import { catalogCountry, resolveCountryId } from "./countries";
 import type { Entry, LoggedCountry } from "./types";
 
@@ -53,6 +54,28 @@ export function fmtCoord(c: { lat: number; lon: number }): string {
   const la = Math.abs(c.lat).toFixed(1) + "°" + (c.lat >= 0 ? "N" : "S");
   const lo = Math.abs(c.lon).toFixed(1) + "°" + (c.lon >= 0 ? "E" : "W");
   return la + ", " + lo;
+}
+
+/**
+ * Origin/subject note for entries whose category splits the two (books, film,
+ * music — see Category.subjects), phrased for the country page it appears on:
+ * "About Korea · China" on the origin's page, "From Japan" on a subject's page
+ * (with "· About China" appended while other subjects remain). Null when the
+ * entry names no subjects or its category reads countries as a flat list.
+ */
+export function originSubject(e: Entry, currentCountryId: string): string | null {
+  const covered = coveredCountryIds(e);
+  if (!hasSubjects(e.category) || covered.length < 2) return null;
+  const name = (id: string) => catalogCountry(id)?.name ?? "";
+  const subjects = covered
+    .slice(1)
+    .filter((id) => id !== currentCountryId)
+    .map(name)
+    .filter(Boolean);
+  const parts: string[] = [];
+  if (covered[0] !== currentCountryId && name(covered[0])) parts.push("From " + name(covered[0]));
+  if (subjects.length) parts.push("About " + subjects.join(" · "));
+  return parts.length ? parts.join(" · ") : null;
 }
 
 /** Byline shown under an entry title, phrased by category. */

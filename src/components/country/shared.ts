@@ -4,7 +4,7 @@
 
 import { catalogCountry } from "@/lib/countries";
 import { isInlineImageType } from "@/lib/filetypes";
-import { coveredCountryIds } from "@/lib/logbook";
+import { coveredCountryIds, originSubject } from "@/lib/logbook";
 import type { Palette } from "@/lib/palettes";
 import type { Entry, LoggedCountry } from "@/lib/types";
 
@@ -64,16 +64,20 @@ export function ratingStars(e: Entry): string | null {
 }
 
 /**
- * The OTHER countries a multi-country entry covers, as "Kazakhstan · Tajikistan",
- * or null for a normal single-country entry — shown so the same entry appearing
- * on several country pages explains itself.
+ * Cross-reference line for a multi-country entry as seen from the current
+ * country page, or null for a single-country entry — shown so the same entry
+ * appearing on several pages explains itself. Books/film/music phrase origin
+ * vs subject ("From Japan · About China"); other categories list the OTHER
+ * covered countries behind the variant's own prefix ("Also Kazakhstan").
  */
-export function alsoCovers(e: Entry, currentCountryId: string): string | null {
+export function relationNote(e: Entry, currentCountryId: string, alsoPrefix = "Also"): string | null {
+  const media = originSubject(e, currentCountryId);
+  if (media) return media;
   const names = coveredCountryIds(e)
     .filter((id) => id !== currentCountryId)
     .map((id) => catalogCountry(id)?.name ?? "")
     .filter(Boolean);
-  return names.length ? names.join(" · ") : null;
+  return names.length ? `${alsoPrefix} ${names.join(" · ")}` : null;
 }
 
 /** URL of an entry's uploaded file, or null when it has none. */

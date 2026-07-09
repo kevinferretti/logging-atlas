@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { CSSProperties } from "react";
-import { CATEGORIES } from "@/lib/categories";
+import { CATEGORIES, hasSubjects } from "@/lib/categories";
 import { COUNTRY_CATALOG_SORTED, countryLabel } from "@/lib/countries";
 import { FIELD_LIMITS, type CategoryKey, type Entry, type NewEntryInput } from "@/lib/types";
 
@@ -33,7 +33,7 @@ function todayISO(): string {
 export default function LogModal({ initialCountryId, entry, onClose, onSave }: LogModalProps) {
   const editing = entry ?? null;
   const [countryId, setCountryId] = useState(editing?.countryId ?? initialCountryId ?? COUNTRY_CATALOG_SORTED[0]?.id ?? "");
-  // Additional countries the entry covers (a book spanning several countries).
+  // Additional countries the entry covers — its subjects for books/film/music.
   const [extraCountryIds, setExtraCountryIds] = useState<string[]>(editing?.extraCountryIds ?? []);
   const [category, setCategory] = useState<CategoryKey>(editing?.category ?? "recipe");
   // Log-vs-wish status; only shown while editing — on create the two Add
@@ -55,6 +55,11 @@ export default function LogModal({ initialCountryId, entry, onClose, onSave }: L
   const [error, setError] = useState<string | null>(null);
 
   const keptFile = editing && editing.fileKey && category === "recipe" && !file ? editing : null;
+
+  // Books/film/music split the countries into origin (the single main pick —
+  // where the work is from) and subject (the extras — what it's about); the
+  // other categories read them as one flat covered list.
+  const subjects = hasSubjects(category);
 
   async function save(wish: boolean) {
     const t = title.trim();
@@ -107,8 +112,8 @@ export default function LogModal({ initialCountryId, entry, onClose, onSave }: L
           <div style={{ fontFamily: "Marcellus,serif", fontSize: 24, color: "var(--ink)" }}>{editing ? "Edit entry" : "Log an entry"}</div>
         </div>
 
-        <div style={labelStyle}>
-          Country
+        <div style={labelStyle} title={subjects ? "Where it's from" : undefined}>
+          {subjects ? "Origin" : "Country"}
           <select
             value={countryId}
             onChange={(e) => {
@@ -151,7 +156,7 @@ export default function LogModal({ initialCountryId, entry, onClose, onSave }: L
             }}
             style={{ ...inputStyle, cursor: "pointer", color: "var(--ink-soft)" }}
           >
-            <option value="">＋ Also covers… (optional)</option>
+            <option value="">{subjects ? "＋ About… — its subject countries (optional)" : "＋ Also covers… (optional)"}</option>
             {PICKER_GROUPS.map(([label, list]) => (
               <optgroup key={label} label={label}>
                 {list

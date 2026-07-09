@@ -7,7 +7,7 @@
 import { category } from "@/lib/categories";
 import { fmtCoord, subLine } from "@/lib/logbook";
 import type { Entry } from "@/lib/types";
-import { DISPLAY, MONO, SERIF, alsoCovers, entryDateParts, fileHref, linkHost, ratingStars, splitEntries, type VariantProps } from "./shared";
+import { DISPLAY, MONO, SERIF, entryDateParts, fileHref, linkHost, ratingStars, relationNote, splitEntries, type VariantProps } from "./shared";
 
 export default function GazetteVariant({ country: c, onBack, onPassport, onAdd, onEdit, onDelete }: VariantProps) {
   const { logs, wishes } = splitEntries(c);
@@ -47,9 +47,9 @@ export default function GazetteVariant({ country: c, onBack, onPassport, onAdd, 
           <div style={{ fontFamily: DISPLAY, fontSize: 38, lineHeight: 1.12, color: "var(--ink)", marginTop: 8 }}>{lead.title}</div>
           {subLine(lead) && <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 17, color: "var(--ink-soft)", marginTop: 7 }}>{subLine(lead)}</div>}
           {ratingStars(lead) && <div style={{ fontSize: 14, letterSpacing: 3, color: "var(--sepia)", marginTop: 8 }}>{ratingStars(lead)}</div>}
-          {alsoCovers(lead, c.id) && (
+          {relationNote(lead, c.id, "Also reported from") && (
             <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: 1.6, textTransform: "uppercase", color: "var(--ink-soft)", marginTop: 8 }}>
-              ALSO REPORTED FROM {alsoCovers(lead, c.id)}
+              {relationNote(lead, c.id, "Also reported from")}
             </div>
           )}
           {lead.note && <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 18, color: "var(--ink)", opacity: 0.85, marginTop: 12 }}>“{lead.note}”</div>}
@@ -70,8 +70,8 @@ export default function GazetteVariant({ country: c, onBack, onPassport, onAdd, 
               <div style={{ fontFamily: DISPLAY, fontSize: 20, lineHeight: 1.18, color: "var(--ink)", marginTop: 4 }}>{e.title}</div>
               {subLine(e) && <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 14, color: "var(--ink-soft)", marginTop: 2 }}>{subLine(e)}</div>}
               {ratingStars(e) && <div style={{ fontSize: 11.5, letterSpacing: 2, color: "var(--sepia)", marginTop: 3 }}>{ratingStars(e)}</div>}
-              {alsoCovers(e, c.id) && (
-                <div style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: 1.4, textTransform: "uppercase", color: "var(--ink-soft)", marginTop: 3 }}>ALSO {alsoCovers(e, c.id)}</div>
+              {relationNote(e, c.id) && (
+                <div style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: 1.4, textTransform: "uppercase", color: "var(--ink-soft)", marginTop: 3 }}>{relationNote(e, c.id)}</div>
               )}
               {e.note && <div style={{ fontFamily: SERIF, fontSize: 14.5, color: "var(--ink)", opacity: 0.85, marginTop: 6 }}>{e.note}</div>}
               <Refs e={e} onEdit={onEdit} onDelete={onDelete} />

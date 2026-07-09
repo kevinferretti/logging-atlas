@@ -10,7 +10,7 @@
 import { catalogCountry } from "./countries";
 import { escapeHtml as esc } from "./html";
 import { buildEntryStamp } from "./inkstamps";
-import { coveredCountryIds, subLine } from "./logbook";
+import { coveredCountryIds, originSubject, subLine } from "./logbook";
 import type { CategoryKey, Entry } from "./types";
 
 export interface BookHolder {
@@ -866,12 +866,15 @@ export class PassportBook {
     const starsRow = e.rating
       ? '<div style="font-size:11.5px;letter-spacing:2px;color:#8A5A3B;margin-top:4px;">' + "★".repeat(e.rating) + "☆".repeat(5 - e.rating) + "</div>"
       : "";
+    // Books/film/music phrase origin vs subject; other categories keep the
+    // flat "Also …" list of the entry's other covered countries.
     const alsoNames = coveredCountryIds(e)
       .filter((id) => id !== found.country.id)
       .map((id) => catalogCountry(id)?.name ?? "")
       .filter(Boolean);
-    const alsoRow = alsoNames.length
-      ? '<div style="font-family:\'Special Elite\',monospace;font-size:8.5px;letter-spacing:1.4px;text-transform:uppercase;color:#6B6154;margin-top:6px;">Also ' + esc(alsoNames.join(" · ")) + "</div>"
+    const relation = originSubject(e, found.country.id) ?? (alsoNames.length ? "Also " + alsoNames.join(" · ") : null);
+    const alsoRow = relation
+      ? '<div style="font-family:\'Special Elite\',monospace;font-size:8.5px;letter-spacing:1.4px;text-transform:uppercase;color:#6B6154;margin-top:6px;">' + esc(relation) + "</div>"
       : "";
     const noteRow = e.note
       ? '<div style="font-family:\'EB Garamond\',serif;font-size:13.5px;color:#4A4336;margin-top:7px;line-height:1.35;">' + esc(e.note) + "</div>"

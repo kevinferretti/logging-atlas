@@ -4,9 +4,11 @@ export interface Entry {
   id: string;
   countryId: string;
   /**
-   * Additional countries the entry covers beyond countryId (one book spanning
-   * several countries is logged once and shown under each). Never includes
-   * countryId; [] for a normal single-country entry.
+   * Additional countries the entry covers beyond countryId (one entry is
+   * logged once and shown under each). For books/film/music these are the
+   * SUBJECT countries — what the work is about — while countryId is its
+   * origin; for recipes/places all covered countries read the same. Never
+   * includes countryId; [] for a normal single-country entry.
    */
   extraCountryIds: string[];
   category: CategoryKey;
@@ -54,7 +56,7 @@ export const FIELD_LIMITS = { title: 200, by: 120, note: 500 } as const;
 /** Payload for logging a new entry (shared by the log modal and book). */
 export interface NewEntryInput {
   countryId: string;
-  /** Additional covered countries; see Entry.extraCountryIds. */
+  /** Additional covered countries (subjects for media); see Entry.extraCountryIds. */
   extraCountryIds: string[];
   category: CategoryKey;
   wishlist: boolean;
