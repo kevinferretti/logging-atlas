@@ -5,9 +5,12 @@ import { useRouter } from "next/navigation";
 import Globe, { type GlobeMode } from "./Globe";
 import LogModal from "./LogModal";
 import QuizGame from "./QuizGame";
-import { COUNTRY_CATALOG } from "@/lib/countries";
+import { entryDateParts } from "./country/shared";
+import { category } from "@/lib/categories";
+import { continentOf, continentRank } from "@/lib/continents";
+import { COUNTRY_CATALOG, catalogCountry, countryLabel } from "@/lib/countries";
 import { submitEntry } from "@/lib/entriesClient";
-import { assembleCountries } from "@/lib/logbook";
+import { assembleCountries, coveredCountryIds, subLine } from "@/lib/logbook";
 import { buildCountDisc } from "@/lib/stamps";
 import { coercePaletteName, getPalette, paletteCssVars, type Palette, type PaletteName } from "@/lib/palettes";
 import type { Entry, LoggedCountry, NewEntryInput, SessionUser } from "@/lib/types";
@@ -17,13 +20,18 @@ interface AtlasAppProps {
   initialEntries: Entry[];
 }
 
-type Tab = "globe" | "map" | "index";
-type IndexOrder = "entries" | "region";
+type Tab = "globe" | "map" | "index" | "diary";
+type IndexOrder = "entries" | "region" | "explore";
 
-// Countries per region in the full catalog — the denominator of the
-// "N OF M" tally shown on each region heading in the grouped index.
+// Places per region/continent in the full catalog — the denominators of the
+// "N OF M" tallies shown on the headings of the grouped index views.
 const REGION_TOTALS = new Map<string, number>();
-for (const c of COUNTRY_CATALOG) REGION_TOTALS.set(c.region, (REGION_TOTALS.get(c.region) ?? 0) + 1);
+const CONTINENT_TOTALS = new Map<string, number>();
+for (const c of COUNTRY_CATALOG) {
+  REGION_TOTALS.set(c.region, (REGION_TOTALS.get(c.region) ?? 0) + 1);
+  const cont = continentOf(c.region);
+  CONTINENT_TOTALS.set(cont, (CONTINENT_TOTALS.get(cont) ?? 0) + 1);
+}
 
 export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
   const router = useRouter();
@@ -44,16 +52,62 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
     () => [...countries].sort((a, b) => b.logCount - a.logCount || b.wishCount - a.wishCount),
     [countries],
   );
-  // Regions A→Z; within each, countries inherit ranked's entries-desc order.
-  const byRegion = useMemo(() => {
-    const groups = new Map<string, LoggedCountry[]>();
+  // Continents in fixed order, regions A→Z beneath each; within a region,
+  // countries inherit ranked's entries-desc order.
+  const byContinent = useMemo(() => {
+    const regions = new Map<string, LoggedCountry[]>();
     for (const c of ranked) {
-      const list = groups.get(c.region);
+      const list = regions.get(c.region);
       if (list) list.push(c);
-      else groups.set(c.region, [c]);
+      else regions.set(c.region, [c]);
     }
-    return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+    const continents = new Map<string, [string, LoggedCountry[]][]>();
+    for (const [region, list] of [...regions.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+      const cont = continentOf(region);
+      const group = continents.get(cont);
+      if (group) group.push([region, list]);
+      else continents.set(cont, [[region, list]]);
+    }
+    return [...continents.entries()].sort((a, b) => continentRank(a[0]) - continentRank(b[0]) || a[0].localeCompare(b[0]));
   }, [ranked]);
+
+  // Places with nothing really logged yet — untouched or wish-list-only —
+  // grouped like the continent index, A→Z within each region.
+  const toExplore = useMemo(() => {
+    const logged = new Map(countries.map((c) => [c.id, c]));
+    const regions = new Map<string, { id: string; label: string; wishes: number }[]>();
+    for (const c of COUNTRY_CATALOG) {
+      if ((logged.get(c.id)?.logCount ?? 0) > 0) continue;
+      const list = regions.get(c.region) ?? [];
+      if (!list.length) regions.set(c.region, list);
+      list.push({ id: c.id, label: countryLabel(c), wishes: logged.get(c.id)?.wishCount ?? 0 });
+    }
+    const continents = new Map<string, [string, { id: string; label: string; wishes: number }[]][]>();
+    for (const [region, list] of [...regions.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+      list.sort((a, b) => a.label.localeCompare(b.label));
+      const cont = continentOf(region);
+      const group = continents.get(cont);
+      if (group) group.push([region, list]);
+      else continents.set(cont, [[region, list]]);
+    }
+    return [...continents.entries()].sort((a, b) => continentRank(a[0]) - continentRank(b[0]) || a[0].localeCompare(b[0]));
+  }, [countries]);
+  const unexplored = useMemo(() => toExplore.reduce((n, [, regions]) => n + regions.reduce((m, [, list]) => m + list.length, 0), 0), [toExplore]);
+
+  // The diary: every real log, newest first, grouped by year (undated
+  // pre-date-field entries close out their year).
+  const diary = useMemo(() => {
+    const logs = entries
+      .filter((e) => !e.wishlist)
+      .sort((a, b) => b.year - a.year || b.date.localeCompare(a.date) || a.title.localeCompare(b.title));
+    const byYear: [number, Entry[]][] = [];
+    for (const e of logs) {
+      const g = byYear[byYear.length - 1];
+      if (g && g[0] === e.year) g[1].push(e);
+      else byYear.push([e.year, [e]]);
+    }
+    return byYear;
+  }, [entries]);
   const maxLogs = Math.max(1, ranked.length ? ranked[0].logCount : 1);
   // Count entries, not per-country appearances — a multi-country entry files
   // under each country it covers but is still one log.
@@ -113,7 +167,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
         countries={countries}
         palette={palette}
         mode={globeMode}
-        active={tab !== "index" && !quizOpen}
+        active={(tab === "globe" || tab === "map") && !quizOpen}
         onSelect={selectFromMap}
       />
 
@@ -175,7 +229,7 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
 
       {/* Globe / Map / Index toggle */}
       <div style={{ position: "absolute", top: 24, left: "50%", transform: "translateX(-50%)", zIndex: 6, display: "flex", background: "var(--paper2)", border: "1px solid var(--line)", borderRadius: 3, padding: 3, boxShadow: "0 3px 8px rgba(40,28,12,.14)" }}>
-        {(["globe", "map", "index"] as Tab[]).map((t) => {
+        {(["globe", "map", "index", "diary"] as Tab[]).map((t) => {
           const on = tab === t;
           return (
             <button
@@ -207,24 +261,47 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
           <div style={{ maxWidth: 640, margin: "0 auto", padding: "104px 24px 64px" }}>
             <div style={{ marginBottom: 18, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
               <div style={{ fontFamily: "'Special Elite',monospace", fontSize: 11, letterSpacing: 2.5, color: "var(--sepia)" }}>THE INDEX</div>
-              {ranked.length > 0 && (
-                <div style={{ display: "inline-flex", border: "1px solid var(--line)", borderRadius: 2, overflow: "hidden" }}>
-                  {([["By entries", "entries"], ["By region", "region"]] as [string, IndexOrder][]).map(([label, order]) => {
-                    const on = indexOrder === order;
-                    return (
-                      <button
-                        key={order}
-                        onClick={() => setIndexOrder(order)}
-                        style={{ border: "none", padding: "5px 9px", cursor: "pointer", fontFamily: "'Special Elite',monospace", fontSize: 9.5, letterSpacing: 1, textTransform: "uppercase", background: on ? "var(--ink)" : "transparent", color: on ? "var(--paper)" : "var(--ink-soft)", transition: "all .15s ease" }}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+              <div style={{ display: "inline-flex", border: "1px solid var(--line)", borderRadius: 2, overflow: "hidden" }}>
+                {([["By entries", "entries"], ["By region", "region"], ["To explore", "explore"]] as [string, IndexOrder][]).map(([label, order]) => {
+                  const on = indexOrder === order;
+                  return (
+                    <button
+                      key={order}
+                      onClick={() => setIndexOrder(order)}
+                      style={{ border: "none", padding: "5px 9px", cursor: "pointer", fontFamily: "'Special Elite',monospace", fontSize: 9.5, letterSpacing: 1, textTransform: "uppercase", background: on ? "var(--ink)" : "transparent", color: on ? "var(--paper)" : "var(--ink-soft)", transition: "all .15s ease" }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            {ranked.length === 0 ? (
+            {indexOrder === "explore" ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 34 }}>
+                <div style={{ fontFamily: "'EB Garamond',serif", fontStyle: "italic", fontSize: 15, color: "var(--ink-soft)", padding: "0 12px" }}>
+                  {unexplored === 0
+                    ? "Nowhere left untouched — the whole atlas bears your ink."
+                    : `${unexplored} places await their first stamp. ☆ marks a wish already filed.`}
+                </div>
+                {toExplore.map(([continent, regions]) => (
+                  <div key={continent}>
+                    <ContinentHead name={continent} count={regions.reduce((n, [, l]) => n + l.length, 0)} of={null} />
+                    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                      {regions.map(([region, list]) => (
+                        <div key={region}>
+                          {!(regions.length === 1 && region === continent) && <RegionHead name={region} tally={null} />}
+                          <div style={{ display: "flex", flexDirection: "column" }}>
+                            {list.map((p) => (
+                              <ExploreRow key={p.id} {...p} onPick={selectFromMap} />
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : ranked.length === 0 ? (
               <div style={{ padding: "40px 0", textAlign: "center", fontFamily: "'EB Garamond',serif", fontStyle: "italic", fontSize: 16, color: "var(--ink-soft)" }}>
                 Your atlas is empty
               </div>
@@ -235,18 +312,26 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
                 ))}
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 26 }}>
-                {byRegion.map(([region, list]) => (
-                  <div key={region}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, padding: "0 12px 7px", borderBottom: "1px solid var(--line)", marginBottom: 6 }}>
-                      <div style={{ fontFamily: "'Special Elite',monospace", fontSize: 10, letterSpacing: 2, color: "var(--sepia)" }}>{region.toUpperCase()}</div>
-                      <div style={{ fontFamily: "'Special Elite',monospace", fontSize: 9.5, letterSpacing: 1, color: "var(--ink-soft)", flex: "0 0 auto" }}>
-                        {list.length} OF {REGION_TOTALS.get(region) ?? list.length}
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                      {list.map((c) => (
-                        <IndexRow key={c.id} country={c} palette={palette} maxLogs={maxLogs} showRegion={false} onOpen={openCountry} />
+              <div style={{ display: "flex", flexDirection: "column", gap: 34 }}>
+                {byContinent.map(([continent, regions]) => (
+                  <div key={continent}>
+                    <ContinentHead
+                      name={continent}
+                      count={regions.reduce((n, [, l]) => n + l.length, 0)}
+                      of={CONTINENT_TOTALS.get(continent) ?? null}
+                    />
+                    <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+                      {regions.map(([region, list]) => (
+                        <div key={region}>
+                          {!(regions.length === 1 && region === continent) && (
+                            <RegionHead name={region} tally={`${list.length} OF ${REGION_TOTALS.get(region) ?? list.length}`} />
+                          )}
+                          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                            {list.map((c) => (
+                              <IndexRow key={c.id} country={c} palette={palette} maxLogs={maxLogs} showRegion={false} onOpen={openCountry} />
+                            ))}
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -257,8 +342,38 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
         </div>
       )}
 
+      {/* Diary view (fourth tab): every log, newest first, grouped by year */}
+      {tab === "diary" && (
+        <div style={{ position: "absolute", inset: 0, zIndex: 4, background: "var(--paper)", overflowY: "auto" }}>
+          <div style={{ maxWidth: 680, margin: "0 auto", padding: "104px 24px 64px" }}>
+            <div style={{ marginBottom: 18, display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
+              <div style={{ fontFamily: "'Special Elite',monospace", fontSize: 11, letterSpacing: 2.5, color: "var(--sepia)" }}>THE DIARY</div>
+              {totalLogs > 0 && (
+                <div style={{ fontFamily: "'Special Elite',monospace", fontSize: 9.5, letterSpacing: 1, color: "var(--ink-soft)" }}>
+                  {totalLogs} {totalLogs === 1 ? "LOG" : "LOGS"} · NEWEST FIRST
+                </div>
+              )}
+            </div>
+            {diary.length === 0 ? (
+              <div style={{ padding: "40px 0", textAlign: "center", fontFamily: "'EB Garamond',serif", fontStyle: "italic", fontSize: 16, color: "var(--ink-soft)" }}>
+                Nothing logged yet — the diary begins with the first stamp
+              </div>
+            ) : (
+              diary.map(([year, list]) => (
+                <div key={year} style={{ marginBottom: 30 }}>
+                  <div style={{ fontFamily: "Marcellus,serif", fontSize: 26, color: "var(--ink)", borderBottom: "2px solid var(--ink)", padding: "0 4px 5px", marginBottom: 4 }}>{year}</div>
+                  {list.map((e) => (
+                    <DiaryRow key={e.id} e={e} onOpen={openCountry} />
+                  ))}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Hint (globe/map only) */}
-      {tab !== "index" && (
+      {(tab === "globe" || tab === "map") && (
         <div style={{ position: "absolute", bottom: 22, left: "50%", transform: "translate(-50%,0)", zIndex: 5, fontFamily: "'Special Elite',monospace", fontSize: 10, letterSpacing: 1.6, color: "var(--ink-soft)", opacity: 0.72, pointerEvents: "none", whiteSpace: "nowrap" }}>
           DRAG TO SPIN&nbsp;&nbsp;·&nbsp;&nbsp;SCROLL TO ZOOM&nbsp;&nbsp;·&nbsp;&nbsp;CLICK ANY COUNTRY TO OPEN IT
         </div>
@@ -328,6 +443,77 @@ function IndexRow({
           <div style={{ width: `${Math.round((c.logCount / maxLogs) * 100)}%`, height: "100%", background: "var(--sepia)", borderRadius: 3 }} />
         </div>
       </div>
+    </button>
+  );
+}
+
+function ContinentHead({ name, count, of }: { name: string; count: number; of: number | null }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, padding: "0 4px 6px", borderBottom: "2px solid var(--ink)", marginBottom: 14 }}>
+      <div style={{ fontFamily: "Marcellus,serif", fontSize: 22, color: "var(--ink)" }}>{name}</div>
+      <div style={{ fontFamily: "'Special Elite',monospace", fontSize: 9.5, letterSpacing: 1, color: "var(--ink-soft)", flex: "0 0 auto" }}>
+        {of == null ? count : `${count} OF ${of}`}
+      </div>
+    </div>
+  );
+}
+
+function RegionHead({ name, tally }: { name: string; tally: string | null }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, padding: "0 12px 7px", borderBottom: "1px solid var(--line)", marginBottom: 6 }}>
+      <div style={{ fontFamily: "'Special Elite',monospace", fontSize: 10, letterSpacing: 2, color: "var(--sepia)" }}>{name.toUpperCase()}</div>
+      {tally && <div style={{ fontFamily: "'Special Elite',monospace", fontSize: 9.5, letterSpacing: 1, color: "var(--ink-soft)", flex: "0 0 auto" }}>{tally}</div>}
+    </div>
+  );
+}
+
+function ExploreRow({ id, label, wishes, onPick }: { id: string; label: string; wishes: number; onPick: (id: string) => void }) {
+  return (
+    <button
+      onClick={() => onPick(id)}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--panel)")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+      style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, width: "100%", textAlign: "left", background: "none", border: "none", borderRadius: 4, padding: "7px 12px", cursor: "pointer", transition: "background .15s" }}
+    >
+      <span style={{ fontFamily: "'EB Garamond',serif", fontSize: 16.5, color: "var(--ink)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
+      {wishes > 0 && (
+        <span style={{ fontFamily: "'Special Elite',monospace", fontSize: 10, letterSpacing: 1, color: "var(--sepia)", flex: "0 0 auto" }}>☆ {wishes}</span>
+      )}
+    </button>
+  );
+}
+
+function DiaryRow({ e, onOpen }: { e: Entry; onOpen: (id: string) => void }) {
+  const cat = category(e.category);
+  const d = entryDateParts(e);
+  const names = coveredCountryIds(e)
+    .map((id) => catalogCountry(id)?.name ?? "")
+    .filter(Boolean)
+    .join(" · ");
+  const sub = subLine(e);
+  const stars = e.rating ? "★".repeat(e.rating) + "☆".repeat(5 - e.rating) : null;
+  return (
+    <button
+      onClick={() => onOpen(e.countryId)}
+      onMouseEnter={(ev) => (ev.currentTarget.style.background = "var(--panel)")}
+      onMouseLeave={(ev) => (ev.currentTarget.style.background = "none")}
+      style={{ display: "flex", alignItems: "baseline", gap: 13, width: "100%", textAlign: "left", background: "none", border: "none", borderBottom: "1px solid var(--line)", padding: "12px 8px", cursor: "pointer", transition: "background .15s" }}
+    >
+      <span style={{ flex: "0 0 52px", fontFamily: "'Special Elite',monospace", fontSize: 10.5, letterSpacing: 1, color: "var(--ink-soft)" }}>
+        {d ? `${d.day} ${d.month}` : "· · ·"}
+      </span>
+      <span style={{ flex: "0 0 auto", fontFamily: "'Special Elite',monospace", fontSize: 8.5, letterSpacing: 1.2, textTransform: "uppercase", color: cat?.color, border: `1px solid ${cat?.color}`, borderRadius: 2, padding: "2px 6px", opacity: 0.9, whiteSpace: "nowrap" }}>
+        {cat?.one}
+      </span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ fontFamily: "Marcellus,serif", fontSize: 17.5, color: "var(--ink)" }}>{e.title}</span>
+        {sub && <span style={{ fontFamily: "'EB Garamond',serif", fontStyle: "italic", fontSize: 13.5, color: "var(--ink-soft)", marginLeft: 8 }}>{sub}</span>}
+        <span style={{ display: "block", fontFamily: "'Special Elite',monospace", fontSize: 9, letterSpacing: 1.4, textTransform: "uppercase", color: "var(--ink-soft)", marginTop: 3 }}>
+          {names}
+          {stars && <span style={{ color: "var(--sepia)", letterSpacing: 2, marginLeft: 8 }}>{stars}</span>}
+        </span>
+        {e.note && <span style={{ display: "block", fontFamily: "'EB Garamond',serif", fontStyle: "italic", fontSize: 13.5, color: "var(--ink-soft)", opacity: 0.9, marginTop: 3 }}>“{e.note}”</span>}
+      </span>
     </button>
   );
 }

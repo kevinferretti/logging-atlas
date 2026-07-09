@@ -257,6 +257,13 @@ export default function PassportBook({ user, countries, dark, initialCountryId, 
 
       {/* Bottom nav */}
       <div style={{ position: "absolute", zIndex: 35, bottom: 22, left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "center", gap: 18 }}>
+        <button
+          onClick={() => engineRef.current?.jumpToContents()}
+          title="Turn to the contents page"
+          style={{ ...navBtn, width: "auto", borderRadius: 23, padding: "0 16px", fontFamily: "'Special Elite',monospace", fontSize: 10, letterSpacing: 1.5 }}
+        >
+          ✦ CONTENTS
+        </button>
         <button onClick={() => engineRef.current?.turnBtn(-1)} aria-label="Previous page" style={navBtn}>
           ‹
         </button>

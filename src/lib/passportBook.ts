@@ -1129,6 +1129,10 @@ export class PassportBook {
       });
     }, 190);
   }
+  /** Jump straight to the Contents spread (the identity spread when the book is empty). */
+  jumpToContents() {
+    this.jumpTo(this.countries.length ? 2 : 1);
+  }
 
   playFlip() {
     try {

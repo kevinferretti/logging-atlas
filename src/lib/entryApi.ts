@@ -1,6 +1,6 @@
 // Server-side helpers shared by the entries API routes, so POST (create) and
 // PATCH (edit) validate and shape entry fields identically.
-import { isCategoryKey } from "./categories";
+import { hasLink, isCategoryKey } from "./categories";
 import { catalogCountry, resolveCountryId } from "./countries";
 import { normalizeLink } from "./uploads";
 import { FIELD_LIMITS, type CategoryKey, type Entry } from "./types";
@@ -146,7 +146,9 @@ export function parseEntryForm(form: FormData): { data: ParsedEntryForm } | { er
       title: cap(title, FIELD_LIMITS.title),
       by: cap(formString(form, "by"), FIELD_LIMITS.by),
       note: cap(formString(form, "note"), FIELD_LIMITS.note),
-      link: normalizeLink(formString(form, "link")),
+      // Links are recipe/place-only; editing an entry into another category
+      // drops a stored link rather than letting it linger unseen.
+      link: hasLink(category) ? normalizeLink(formString(form, "link")) : "",
       date,
       rating,
       // Only recipes can be national dishes; editing an entry into another

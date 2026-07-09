@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { CSSProperties } from "react";
-import { CATEGORIES, hasSubjects } from "@/lib/categories";
+import { CATEGORIES, hasLink, hasSubjects } from "@/lib/categories";
 import { COUNTRY_CATALOG_SORTED, countryLabel } from "@/lib/countries";
 import { FIELD_LIMITS, type CategoryKey, type Entry, type NewEntryInput } from "@/lib/types";
 
@@ -76,7 +76,9 @@ export default function LogModal({ initialCountryId, entry, onClose, onSave }: L
           title: t,
           by: by.trim(),
           note: note.trim(),
-          link: link.trim(),
+          // Typed text survives category round-trips locally but only
+          // recipe/place submit it (the API forces it "" elsewhere anyway).
+          link: hasLink(category) ? link.trim() : "",
           date,
           // Stars survive status round-trips locally but wishes never submit
           // one (the API forces it null for wishes anyway).
@@ -209,7 +211,9 @@ export default function LogModal({ initialCountryId, entry, onClose, onSave }: L
         <input value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={submitOnEnter} placeholder="Name" maxLength={FIELD_LIMITS.title} style={inputStyle} autoFocus />
         <input value={by} onChange={(e) => setBy(e.target.value)} onKeyDown={submitOnEnter} placeholder={BY_PLACEHOLDER[category]} maxLength={FIELD_LIMITS.by} style={inputStyle} />
         <input value={note} onChange={(e) => setNote(e.target.value)} onKeyDown={submitOnEnter} placeholder="Note (optional)" maxLength={FIELD_LIMITS.note} style={inputStyle} />
-        <input value={link} onChange={(e) => setLink(e.target.value)} onKeyDown={submitOnEnter} placeholder="Link (optional)" style={inputStyle} />
+        {hasLink(category) && (
+          <input value={link} onChange={(e) => setLink(e.target.value)} onKeyDown={submitOnEnter} placeholder="Link (optional)" style={inputStyle} />
+        )}
         {/* Wishes can't be rated — hidden while the Wish toggle is on (create
             mode always shows it; the wish-list button just doesn't send it). */}
         {!(editing && wishlist) && (

@@ -17,6 +17,7 @@ export interface Entry {
   title: string;
   by: string;
   note: string;
+  /** Optional URL — recipes and places only; "" elsewhere (and on old media entries once edited). */
   link: string;
   /** Logged-for date as "yyyy-mm-dd"; "" on entries that predate the field. */
   date: string;
