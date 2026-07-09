@@ -16,7 +16,7 @@ import DossierVariant from "./country/DossierVariant";
 import GazetteVariant from "./country/GazetteVariant";
 import type { VariantProps } from "./country/shared";
 import { catalogCountry, resolveCountryId } from "@/lib/countries";
-import { submitEntry } from "@/lib/entriesClient";
+import { submitEntry, updateEntry } from "@/lib/entriesClient";
 import { assembleCountries } from "@/lib/logbook";
 import { coercePaletteName, getPalette, isDarkPalette, paletteCssVars } from "@/lib/palettes";
 import type { Entry, NewEntryInput, SessionUser } from "@/lib/types";
@@ -42,6 +42,8 @@ export default function CountryPage({ user, initialEntries, countryId, initialVa
   const [variant, setVariant] = useState(initialVariant);
   const [passportOpen, setPassportOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
+  // Entry being edited — opens the log modal prefilled, over whatever is up.
+  const [editTarget, setEditTarget] = useState<Entry | null>(null);
 
   const id = resolveCountryId(countryId);
   const inCatalog = catalogCountry(id);
@@ -64,6 +66,10 @@ export default function CountryPage({ user, initialEntries, countryId, initialVa
     const entry = await submitEntry(input, file);
     setEntries((prev) => [...prev, entry]);
     return entry;
+  }
+
+  function editEntry(entryId: string) {
+    setEditTarget(entries.find((e) => e.id === entryId) ?? null);
   }
 
   async function deleteEntry(entryId: string) {
@@ -121,6 +127,7 @@ export default function CountryPage({ user, initialEntries, countryId, initialVa
             onBack={goWorld}
             onPassport={() => setPassportOpen(true)}
             onAdd={() => setLogOpen(true)}
+            onEdit={editEntry}
             onDelete={confirmDelete}
           />
         )}
@@ -165,7 +172,25 @@ export default function CountryPage({ user, initialEntries, countryId, initialVa
           dark={dark}
           initialCountryId={id}
           onClose={() => setPassportOpen(false)}
+          onEdit={editEntry}
           onDelete={confirmDelete}
+        />
+      )}
+
+      {/* Edit modal — also reachable from the passport book popover */}
+      {editTarget && (
+        <LogModal
+          entry={editTarget}
+          onClose={() => setEditTarget(null)}
+          onSave={async (input, file, removeFile) => {
+            const updated = await updateEntry(editTarget.id, input, file, removeFile);
+            setEntries((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+            setEditTarget(null);
+            // Moved to a different country? Follow it — unless the book is
+            // up, which shows every country and refreshes in place.
+            const target = resolveCountryId(input.countryId);
+            if (!passportOpen && target !== id) router.push(`/country/${target}`);
+          }}
         />
       )}
 

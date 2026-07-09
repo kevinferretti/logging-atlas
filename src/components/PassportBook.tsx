@@ -12,6 +12,8 @@ interface PassportBookProps {
   dark: boolean;
   initialCountryId: string | null;
   onClose: () => void;
+  /** Opens the edit modal for an entry picked in the stamp popover. */
+  onEdit: (id: string) => void;
   /** May return false to signal the delete was declined (keeps the popover up). */
   onDelete: (id: string) => boolean | void;
 }
@@ -23,7 +25,7 @@ function holderNo(id: string): { no: string; noRaw: string } {
   return { no: "WOR " + s.slice(0, 3) + " " + s.slice(3), noRaw: "WOR" + s + "3" };
 }
 
-export default function PassportBook({ user, countries, dark, initialCountryId, onClose, onDelete }: PassportBookProps) {
+export default function PassportBook({ user, countries, dark, initialCountryId, onClose, onEdit, onDelete }: PassportBookProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const deskRef = useRef<HTMLDivElement>(null);
   const scaleRef = useRef<HTMLDivElement>(null);
@@ -37,8 +39,10 @@ export default function PassportBook({ user, countries, dark, initialCountryId, 
 
   // Latest callbacks, so the engine (mounted once) always calls the current ones.
   const onCloseRef = useRef(onClose);
+  const onEditRef = useRef(onEdit);
   const onDeleteRef = useRef(onDelete);
   onCloseRef.current = onClose;
+  onEditRef.current = onEdit;
   onDeleteRef.current = onDelete;
 
   // Chronological order — first-logged first, like a passport fills up.
@@ -105,6 +109,7 @@ export default function PassportBook({ user, countries, dark, initialCountryId, 
         sound: true,
         cover: "Navy · Classic",
         onClose: () => onCloseRef.current(),
+        onEditEntry: (id) => onEditRef.current(id),
         onDeleteEntry: (id) => onDeleteRef.current(id),
       },
       holder,

@@ -10,7 +10,7 @@ import { buildEntryStamp } from "@/lib/inkstamps";
 import type { CategoryKey, Entry } from "@/lib/types";
 import { DISPLAY, MONO, SERIF, entryDateParts, fileHref, linkHost, splitEntries, type VariantProps } from "./shared";
 
-export default function DossierVariant({ country: c, dark, onBack, onPassport, onAdd, onDelete }: VariantProps) {
+export default function DossierVariant({ country: c, dark, onBack, onPassport, onAdd, onEdit, onDelete }: VariantProps) {
   const { logs, wishes } = splitEntries(c);
   const [tab, setTab] = useState<CategoryKey | "all">("all");
   const present = CATEGORIES.filter((k) => c.entries.some((e) => e.category === k.key));
@@ -81,7 +81,7 @@ export default function DossierVariant({ country: c, dark, onBack, onPassport, o
 
           {/* Exhibits */}
           {shown.map((e, i) => (
-            <Exhibit key={e.id} e={e} no={String(i + 1).padStart(2, "0")} onDelete={onDelete} />
+            <Exhibit key={e.id} e={e} no={String(i + 1).padStart(2, "0")} onEdit={onEdit} onDelete={onDelete} />
           ))}
           {shown.length === 0 && (
             <div style={{ padding: "26px 0", fontFamily: SERIF, fontStyle: "italic", fontSize: 15, color: "var(--ink-soft)" }}>Nothing under this heading.</div>
@@ -127,7 +127,7 @@ function TabBtn({ on, label, onClick }: { on: boolean; label: string; onClick: (
   );
 }
 
-function Exhibit({ e, no, onDelete }: { e: Entry; no: string; onDelete: (id: string) => void }) {
+function Exhibit({ e, no, onEdit, onDelete }: { e: Entry; no: string; onEdit: (id: string) => void; onDelete: (id: string) => void }) {
   const cat = category(e.category);
   const sub = subLine(e);
   const file = fileHref(e);
@@ -157,16 +157,29 @@ function Exhibit({ e, no, onDelete }: { e: Entry; no: string; onDelete: (id: str
           )}
         </div>
       </div>
-      <button
-        onClick={() => onDelete(e.id)}
-        title="Remove entry"
-        style={{ flex: "0 0 auto", alignSelf: "flex-start", background: "none", border: "1px solid var(--line)", borderRadius: 2, color: "var(--ink-soft)", padding: "3px 8px", cursor: "pointer", fontFamily: MONO, fontSize: 8.5, letterSpacing: 1.5 }}
-      >
-        STRIKE
-      </button>
+      <div style={{ flex: "0 0 auto", alignSelf: "flex-start", display: "flex", flexDirection: "column", gap: 6 }}>
+        <button onClick={() => onEdit(e.id)} title="Edit entry" style={fileBtn}>
+          AMEND
+        </button>
+        <button onClick={() => onDelete(e.id)} title="Remove entry" style={fileBtn}>
+          STRIKE
+        </button>
+      </div>
     </div>
   );
 }
+
+const fileBtn: React.CSSProperties = {
+  background: "none",
+  border: "1px solid var(--line)",
+  borderRadius: 2,
+  color: "var(--ink-soft)",
+  padding: "3px 8px",
+  cursor: "pointer",
+  fontFamily: MONO,
+  fontSize: 8.5,
+  letterSpacing: 1.5,
+};
 
 const dashBtn: React.CSSProperties = {
   background: "none",

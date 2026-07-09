@@ -70,6 +70,8 @@ export interface BookOptions {
   sound: boolean;
   cover: string;
   onClose: () => void;
+  /** Opens the edit UI for an entry (the popover closes itself first). */
+  onEditEntry: (id: string) => void;
   /** Return false to signal the delete was declined (keeps the popover up). */
   onDeleteEntry: (id: string) => boolean | void;
 }
@@ -869,13 +871,24 @@ export class PassportBook {
       byRow +
       noteRow +
       linkRow +
-      '<button data-del="' + esc(e.id) + '" style="margin-top:12px;width:100%;background:none;border:1px solid rgba(155,74,57,.5);color:#9B4A39;border-radius:2px;padding:7px 0;cursor:pointer;font-family:\'Special Elite\',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;">Remove entry</button>';
+      '<div style="display:flex;gap:8px;margin-top:12px;">' +
+      '<button data-edit="' + esc(e.id) + '" style="flex:1;background:none;border:1px solid rgba(90,74,48,.5);color:#5B4A30;border-radius:2px;padding:7px 0;cursor:pointer;font-family:\'Special Elite\',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;">Edit</button>' +
+      '<button data-del="' + esc(e.id) + '" style="flex:1;background:none;border:1px solid rgba(155,74,57,.5);color:#9B4A39;border-radius:2px;padding:7px 0;cursor:pointer;font-family:\'Special Elite\',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;">Remove</button>' +
+      "</div>";
     const r = this.els.root.getBoundingClientRect();
     pop.style.left = Math.min(Math.max(clientX - r.left, 130), r.width - 130) + "px";
     pop.style.top = clientY - r.top + "px";
     pop.style.opacity = "1";
     pop.style.pointerEvents = "auto";
     pop.style.transform = "translate(-50%,12px)";
+    const editBtn = pop.querySelector<HTMLElement>("[data-edit]");
+    if (editBtn) {
+      editBtn.onclick = (ev) => {
+        ev.stopPropagation();
+        this.closePopover();
+        this.opts.onEditEntry(e.id);
+      };
+    }
     const delBtn = pop.querySelector<HTMLElement>("[data-del]");
     if (delBtn) {
       delBtn.onclick = (ev) => {

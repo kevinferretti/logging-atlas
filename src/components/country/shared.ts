@@ -13,6 +13,7 @@ export interface VariantProps {
   onBack: () => void;
   onPassport: () => void;
   onAdd: () => void;
+  onEdit: (entryId: string) => void;
   onDelete: (entryId: string) => void;
 }
 

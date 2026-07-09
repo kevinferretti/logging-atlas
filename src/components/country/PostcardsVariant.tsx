@@ -11,7 +11,7 @@ import { DISPLAY, MONO, SERIF, entryDateParts, fileHref, isImage, linkHost, spli
 // Deterministic little tilts so the board looks hand-pinned but stable.
 const TILTS = [-1.1, 0.8, -0.5, 1.3, -0.9, 0.4];
 
-export default function PostcardsVariant({ country: c, onBack, onPassport, onAdd, onDelete }: VariantProps) {
+export default function PostcardsVariant({ country: c, onBack, onPassport, onAdd, onEdit, onDelete }: VariantProps) {
   const { logs, wishes } = splitEntries(c);
   // Newest first — the board reads like fresh pins on top.
   const cards: Entry[] = [...logs].reverse().concat(wishes);
@@ -58,14 +58,14 @@ export default function PostcardsVariant({ country: c, onBack, onPassport, onAdd
       {/* The board */}
       <div style={{ columns: "260px 3", columnGap: 22, marginTop: 40 }}>
         {cards.map((e, i) => (
-          <Card key={e.id} e={e} tilt={TILTS[i % TILTS.length]} onDelete={onDelete} />
+          <Card key={e.id} e={e} tilt={TILTS[i % TILTS.length]} onEdit={onEdit} onDelete={onDelete} />
         ))}
       </div>
     </div>
   );
 }
 
-function Card({ e, tilt, onDelete }: { e: Entry; tilt: number; onDelete: (id: string) => void }) {
+function Card({ e, tilt, onEdit, onDelete }: { e: Entry; tilt: number; onEdit: (id: string) => void; onDelete: (id: string) => void }) {
   const cat = category(e.category);
   const sub = subLine(e);
   const file = fileHref(e);
@@ -131,9 +131,14 @@ function Card({ e, tilt, onDelete }: { e: Entry; tilt: number; onDelete: (id: st
             </a>
           )}
         </div>
-        <button onClick={() => onDelete(e.id)} title="Remove entry" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-soft)", opacity: 0.5, fontSize: 10.5, padding: 2 }}>
-          ✕
-        </button>
+        <div style={{ display: "flex", gap: 2, flex: "0 0 auto" }}>
+          <button onClick={() => onEdit(e.id)} title="Edit entry" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-soft)", opacity: 0.5, fontSize: 10.5, padding: 2 }}>
+            ✎
+          </button>
+          <button onClick={() => onDelete(e.id)} title="Remove entry" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-soft)", opacity: 0.5, fontSize: 10.5, padding: 2 }}>
+            ✕
+          </button>
+        </div>
       </div>
     </div>
   );

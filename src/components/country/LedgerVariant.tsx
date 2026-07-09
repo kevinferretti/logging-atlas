@@ -11,9 +11,9 @@ import { buildCountDisc } from "@/lib/stamps";
 import type { Entry } from "@/lib/types";
 import { DISPLAY, MONO, SERIF, entryDateParts, fileHref, linkHost, splitEntries, type VariantProps } from "./shared";
 
-const COLS = "44px 84px 1fr 92px 150px 30px";
+const COLS = "44px 84px 1fr 92px 150px 52px";
 
-export default function LedgerVariant({ country: c, palette, onBack, onPassport, onAdd, onDelete }: VariantProps) {
+export default function LedgerVariant({ country: c, palette, onBack, onPassport, onAdd, onEdit, onDelete }: VariantProps) {
   const { logs, wishes } = splitEntries(c);
   const prefix = countryPrefix(c.id);
   return (
@@ -52,7 +52,7 @@ export default function LedgerVariant({ country: c, palette, onBack, onPassport,
           Nothing logged yet — only wishes below.
         </div>
       ) : (
-        logs.map((e, i) => <Row key={e.id} e={e} no={String(i + 1).padStart(2, "0")} onDelete={onDelete} />)
+        logs.map((e, i) => <Row key={e.id} e={e} no={String(i + 1).padStart(2, "0")} onEdit={onEdit} onDelete={onDelete} />)
       )}
 
       {wishes.length > 0 && (
@@ -60,7 +60,7 @@ export default function LedgerVariant({ country: c, palette, onBack, onPassport,
           <div style={{ margin: "44px 0 0", padding: "0 6px 8px", borderBottom: "1.5px solid var(--sepia)", fontFamily: MONO, fontSize: 10, letterSpacing: 2.5, color: "var(--sepia)" }}>
             WISH LIST — DECLARED, NOT YET LOGGED
           </div>
-          {wishes.map((e) => <Row key={e.id} e={e} no="☆" onDelete={onDelete} />)}
+          {wishes.map((e) => <Row key={e.id} e={e} no="☆" onEdit={onEdit} onDelete={onDelete} />)}
         </>
       )}
 
@@ -71,7 +71,7 @@ export default function LedgerVariant({ country: c, palette, onBack, onPassport,
   );
 }
 
-function Row({ e, no, onDelete }: { e: Entry; no: string; onDelete: (id: string) => void }) {
+function Row({ e, no, onEdit, onDelete }: { e: Entry; no: string; onEdit: (id: string) => void; onDelete: (id: string) => void }) {
   const cat = category(e.category);
   const sub = subLine(e);
   const file = fileHref(e);
@@ -98,7 +98,10 @@ function Row({ e, no, onDelete }: { e: Entry; no: string; onDelete: (id: string)
           <a href={file} target="_blank" rel="noreferrer noopener" style={refLink}>⎘ {e.fileName ?? "attachment"}</a>
         )}
       </div>
-      <button onClick={() => onDelete(e.id)} title="Remove entry" style={xBtn}>✕</button>
+      <div style={{ display: "flex", gap: 2, alignSelf: "center" }}>
+        <button onClick={() => onEdit(e.id)} title="Edit entry" style={xBtn}>✎</button>
+        <button onClick={() => onDelete(e.id)} title="Remove entry" style={xBtn}>✕</button>
+      </div>
     </div>
   );
 }

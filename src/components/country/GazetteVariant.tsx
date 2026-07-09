@@ -9,7 +9,7 @@ import { fmtCoord, subLine } from "@/lib/logbook";
 import type { Entry } from "@/lib/types";
 import { DISPLAY, MONO, SERIF, entryDateParts, fileHref, linkHost, splitEntries, type VariantProps } from "./shared";
 
-export default function GazetteVariant({ country: c, onBack, onPassport, onAdd, onDelete }: VariantProps) {
+export default function GazetteVariant({ country: c, onBack, onPassport, onAdd, onEdit, onDelete }: VariantProps) {
   const { logs, wishes } = splitEntries(c);
   const lead = logs[logs.length - 1];
   // Below the fold: everything else, newest first.
@@ -47,7 +47,7 @@ export default function GazetteVariant({ country: c, onBack, onPassport, onAdd, 
           <div style={{ fontFamily: DISPLAY, fontSize: 38, lineHeight: 1.12, color: "var(--ink)", marginTop: 8 }}>{lead.title}</div>
           {subLine(lead) && <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 17, color: "var(--ink-soft)", marginTop: 7 }}>{subLine(lead)}</div>}
           {lead.note && <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 18, color: "var(--ink)", opacity: 0.85, marginTop: 12 }}>“{lead.note}”</div>}
-          <Refs e={lead} onDelete={onDelete} center />
+          <Refs e={lead} onEdit={onEdit} onDelete={onDelete} center />
         </div>
       ) : (
         <div style={{ padding: "30px 0 26px", textAlign: "center", fontFamily: SERIF, fontStyle: "italic", fontSize: 17, color: "var(--ink-soft)" }}>
@@ -64,7 +64,7 @@ export default function GazetteVariant({ country: c, onBack, onPassport, onAdd, 
               <div style={{ fontFamily: DISPLAY, fontSize: 20, lineHeight: 1.18, color: "var(--ink)", marginTop: 4 }}>{e.title}</div>
               {subLine(e) && <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 14, color: "var(--ink-soft)", marginTop: 2 }}>{subLine(e)}</div>}
               {e.note && <div style={{ fontFamily: SERIF, fontSize: 14.5, color: "var(--ink)", opacity: 0.85, marginTop: 6 }}>{e.note}</div>}
-              <Refs e={e} onDelete={onDelete} />
+              <Refs e={e} onEdit={onEdit} onDelete={onDelete} />
             </div>
           ))}
         </div>
@@ -83,6 +83,7 @@ export default function GazetteVariant({ country: c, onBack, onPassport, onAdd, 
                 <div key={e.id} style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
                   <span style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: 1.4, color: cat?.color }}>☆ {cat?.one.toUpperCase()}</span>
                   <span style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 16.5, color: "var(--ink)" }}>{e.title}</span>
+                  <button onClick={() => onEdit(e.id)} title="Edit entry" style={xBtn}>✎</button>
                   <button onClick={() => onDelete(e.id)} title="Remove entry" style={xBtn}>✕</button>
                 </div>
               );
@@ -104,7 +105,7 @@ function Kicker({ e }: { e: Entry }) {
   );
 }
 
-function Refs({ e, onDelete, center }: { e: Entry; onDelete: (id: string) => void; center?: boolean }) {
+function Refs({ e, onEdit, onDelete, center }: { e: Entry; onEdit: (id: string) => void; onDelete: (id: string) => void; center?: boolean }) {
   const file = fileHref(e);
   return (
     <div style={{ display: "flex", gap: 12, alignItems: "baseline", marginTop: 7, justifyContent: center ? "center" : "flex-start" }}>
@@ -118,6 +119,7 @@ function Refs({ e, onDelete, center }: { e: Entry; onDelete: (id: string) => voi
           ⎘ {e.fileName ?? "attachment"}
         </a>
       )}
+      <button onClick={() => onEdit(e.id)} title="Edit entry" style={xBtn}>✎</button>
       <button onClick={() => onDelete(e.id)} title="Remove entry" style={xBtn}>✕</button>
     </div>
   );

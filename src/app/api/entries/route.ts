@@ -1,69 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
-import { isCategoryKey } from "@/lib/categories";
-import { catalogCountry, resolveCountryId } from "@/lib/countries";
-import { MAX_UPLOAD_BYTES, normalizeLink, saveUpload } from "@/lib/uploads";
-import { FIELD_LIMITS, type CategoryKey, type Entry } from "@/lib/types";
-
-const SELECT = {
-  id: true,
-  countryId: true,
-  category: true,
-  wishlist: true,
-  title: true,
-  by: true,
-  note: true,
-  link: true,
-  date: true,
-  year: true,
-  fileName: true,
-  fileKey: true,
-  fileType: true,
-} as const;
-
-type Row = {
-  id: string;
-  countryId: string;
-  category: string;
-  wishlist: boolean;
-  title: string;
-  by: string;
-  note: string;
-  link: string;
-  date: string;
-  year: number;
-  fileName: string | null;
-  fileKey: string | null;
-  fileType: string | null;
-};
-
-function toEntry(row: Row): Entry {
-  return { ...row, category: row.category as CategoryKey };
-}
-
-/** True for a well-formed "yyyy-mm-dd" that is a real calendar date. */
-function isCalendarDate(s: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
-  const d = new Date(s + "T00:00:00Z");
-  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
-}
-
-function localDateString(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-/** Multipart field as a trimmed string — a File-typed part reads as absent. */
-function formString(form: FormData, name: string): string {
-  const v = form.get(name);
-  return typeof v === "string" ? v.trim() : "";
-}
-
-/** Cap to n UTF-16 units without leaving a split surrogate pair at the end. */
-function cap(s: string, n: number): string {
-  const cut = s.slice(0, n);
-  return /[\uD800-\uDBFF]$/.test(cut) ? cut.slice(0, -1) : cut;
-}
+import { ENTRY_SELECT, localDateString, parseEntryForm, toEntry } from "@/lib/entryApi";
+import { MAX_UPLOAD_BYTES, saveUpload } from "@/lib/uploads";
 
 // GET /api/entries — all entries for the signed-in user.
 export async function GET() {
@@ -73,7 +12,7 @@ export async function GET() {
   const rows = await prisma.entry.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "asc" },
-    select: SELECT,
+    select: ENTRY_SELECT,
   });
   return NextResponse.json({ entries: rows.map(toEntry) });
 }
@@ -91,40 +30,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  // Normalize legacy ids at write time so the database only accumulates
-  // current catalog ids.
-  const countryId = resolveCountryId(formString(form, "countryId"));
-  const category = formString(form, "category");
-  const wishlist = form.get("wishlist") === "1";
-  const title = formString(form, "title");
-  const by = formString(form, "by");
-  const note = formString(form, "note");
-  const link = normalizeLink(formString(form, "link"));
+  const parsed = parseEntryForm(form);
+  if ("error" in parsed) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
+  }
+  const { data } = parsed;
 
-  if (!catalogCountry(countryId)) {
-    return NextResponse.json({ error: "Unknown country." }, { status: 400 });
-  }
-  if (!isCategoryKey(category)) {
-    return NextResponse.json({ error: "Unknown category." }, { status: 400 });
-  }
-  if (!title) {
-    return NextResponse.json({ error: "Text is required." }, { status: 400 });
-  }
-
-  // The picker sends the user's local calendar date; fall back to the server's
-  // when missing or malformed. `year` is derived from it so year-based
-  // grouping and stamps always agree with the picked date.
-  const currentYear = new Date().getFullYear();
-  let date = formString(form, "date");
-  if (!isCalendarDate(date) || Number(date.slice(0, 4)) < 1900 || Number(date.slice(0, 4)) > currentYear + 1) {
-    date = localDateString(new Date());
-  }
+  // `year` is derived from the date so year-based grouping and stamps always
+  // agree with the picked date.
+  const date = data.date ?? localDateString(new Date());
   const year = Number(date.slice(0, 4));
 
   // Optional attachment — only stored for recipes for now.
   let fileFields: { fileName: string; fileKey: string; fileType: string } | undefined;
   const file = form.get("file");
-  if (category === "recipe" && file && typeof file !== "string" && file.size > 0) {
+  if (data.category === "recipe" && file && typeof file !== "string" && file.size > 0) {
     if (file.size > MAX_UPLOAD_BYTES) {
       return NextResponse.json({ error: "File too large (max 10 MB)." }, { status: 400 });
     }
@@ -134,18 +54,18 @@ export async function POST(req: Request) {
   const row = await prisma.entry.create({
     data: {
       userId: user.id,
-      countryId,
-      category,
-      wishlist,
-      title: cap(title, FIELD_LIMITS.title),
-      by: cap(by, FIELD_LIMITS.by),
-      note: cap(note, FIELD_LIMITS.note),
-      link,
+      countryId: data.countryId,
+      category: data.category,
+      wishlist: data.wishlist,
+      title: data.title,
+      by: data.by,
+      note: data.note,
+      link: data.link,
       date,
       year,
       ...fileFields,
     },
-    select: SELECT,
+    select: ENTRY_SELECT,
   });
 
   return NextResponse.json({ entry: toEntry(row) }, { status: 201 });

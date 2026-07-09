@@ -9,7 +9,7 @@ import { fmtCoord, subLine } from "@/lib/logbook";
 import type { Entry } from "@/lib/types";
 import { DISPLAY, MONO, SERIF, entryDateParts, fileHref, linkHost, splitEntries, type VariantProps } from "./shared";
 
-export default function JournalVariant({ country: c, onBack, onPassport, onAdd, onDelete }: VariantProps) {
+export default function JournalVariant({ country: c, onBack, onPassport, onAdd, onEdit, onDelete }: VariantProps) {
   const { logs, wishes } = splitEntries(c);
   // Group the (already chronological) logs into year runs.
   const byYear: [number, Entry[]][] = [];
@@ -50,7 +50,7 @@ export default function JournalVariant({ country: c, onBack, onPassport, onAdd, 
             <div style={{ position: "absolute", left: -7, top: 0, width: 12, height: 12, borderRadius: "50%", background: "var(--sepia)", border: "2px solid var(--paper)" }} />
             <div style={{ fontFamily: DISPLAY, fontSize: 25, color: "var(--ink)", transform: "translateY(-8px)" }}>{year}</div>
             {list.map((e) => (
-              <JEntry key={e.id} e={e} hollow={false} onDelete={onDelete} />
+              <JEntry key={e.id} e={e} hollow={false} onEdit={onEdit} onDelete={onDelete} />
             ))}
           </div>
         ))}
@@ -60,7 +60,7 @@ export default function JournalVariant({ country: c, onBack, onPassport, onAdd, 
             <div style={{ position: "absolute", left: -7, top: 0, width: 12, height: 12, borderRadius: "50%", background: "var(--paper)", border: "2px solid var(--sepia)" }} />
             <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 3, color: "var(--sepia)", transform: "translateY(-5px)" }}>SOMEDAY</div>
             {wishes.map((e) => (
-              <JEntry key={e.id} e={e} hollow onDelete={onDelete} />
+              <JEntry key={e.id} e={e} hollow onEdit={onEdit} onDelete={onDelete} />
             ))}
           </div>
         )}
@@ -69,7 +69,7 @@ export default function JournalVariant({ country: c, onBack, onPassport, onAdd, 
   );
 }
 
-function JEntry({ e, hollow, onDelete }: { e: Entry; hollow: boolean; onDelete: (id: string) => void }) {
+function JEntry({ e, hollow, onEdit, onDelete }: { e: Entry; hollow: boolean; onEdit: (id: string) => void; onDelete: (id: string) => void }) {
   const cat = category(e.category);
   const sub = subLine(e);
   const file = fileHref(e);
@@ -110,9 +110,14 @@ function JEntry({ e, hollow, onDelete }: { e: Entry; hollow: boolean; onDelete: 
             )}
           </div>
         </div>
-        <button onClick={() => onDelete(e.id)} title="Remove entry" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-soft)", opacity: 0.45, fontSize: 10.5, padding: 2, flex: "0 0 auto" }}>
-          ✕
-        </button>
+        <div style={{ display: "flex", gap: 2, flex: "0 0 auto" }}>
+          <button onClick={() => onEdit(e.id)} title="Edit entry" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-soft)", opacity: 0.45, fontSize: 10.5, padding: 2 }}>
+            ✎
+          </button>
+          <button onClick={() => onDelete(e.id)} title="Remove entry" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-soft)", opacity: 0.45, fontSize: 10.5, padding: 2 }}>
+            ✕
+          </button>
+        </div>
       </div>
     </div>
   );
