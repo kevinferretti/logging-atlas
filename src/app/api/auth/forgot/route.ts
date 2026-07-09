@@ -3,6 +3,20 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/rateLimit";
 
+/**
+ * Base URL of the logged reset link. The configured APP_URL wins: the header
+ * fallback (x-forwarded-host / host) is client-controlled, and a forged Host
+ * header would poison the logged link with an attacker's domain — anyone the
+ * operator forwards it to would hand their token to that domain.
+ */
+function linkBase(req: Request): string {
+  const configured = process.env.APP_URL?.trim().replace(/\/+$/, "");
+  if (configured) return configured;
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? new URL(req.url).host;
+  const proto = req.headers.get("x-forwarded-proto") ?? "http";
+  return `${proto}://${host}`;
+}
+
 // POST /api/auth/forgot — issue a one-time password-reset link. The atlas
 // sends no email: the link is written to the server log for the operator to
 // pass along (or fish out for themselves). The response is identical whether
@@ -35,9 +49,7 @@ export async function POST(req: Request) {
         resetTokenExpires: new Date(Date.now() + 60 * 60 * 1000),
       },
     });
-    const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? new URL(req.url).host;
-    const proto = req.headers.get("x-forwarded-proto") ?? "http";
-    console.log(`[password-reset] ${email} → ${proto}://${host}/reset/${token} (valid 1 hour)`);
+    console.log(`[password-reset] ${email} → ${linkBase(req)}/reset/${token} (valid 1 hour)`);
   }
 
   return NextResponse.json({ ok: true });
