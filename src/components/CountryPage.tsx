@@ -201,11 +201,12 @@ export default function CountryPage({ user, initialEntries, countryId, initialVa
           initialCountryId={inCatalog ? id : null}
           onClose={() => setLogOpen(false)}
           onSave={async (input, file) => {
-            await addEntry(input, file);
+            const entry = await addEntry(input, file);
             setLogOpen(false);
-            // Logged under a different country? Follow the entry there.
-            const target = resolveCountryId(input.countryId);
-            if (target !== id) router.push(`/country/${target}`);
+            // Logged under a different country? Follow the entry there —
+            // unless "Also covers" keeps it on this page.
+            const covered = coveredCountryIds(entry);
+            if (!covered.includes(id)) router.push(`/country/${covered[0]}`);
           }}
         />
       )}

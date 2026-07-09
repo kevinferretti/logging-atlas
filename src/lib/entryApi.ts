@@ -90,7 +90,10 @@ export interface ParsedEntryForm {
    * the fallback (today on create, the stored date on edit).
    */
   date: string | null;
-  /** Review rating 1–5, or null when unrated (or out of range). */
+  /**
+   * Review rating 1–5, or null when unrated (or out of range). Forced null
+   * for wish-list entries — no reviewing what hasn't been done yet.
+   */
   rating: number | null;
   /** Recipe-only national-dish flag — forced false for other categories. */
   nationalDish: boolean;
@@ -126,16 +129,20 @@ export function parseEntryForm(form: FormData): { data: ParsedEntryForm } | { er
     date = null;
   }
 
-  // Anything but a whole number of stars in range reads as unrated.
+  const wishlist = form.get("wishlist") === "1";
+
+  // Anything but a whole number of stars in range reads as unrated. Wishes
+  // are never rated — demoting a rated log to the wish list drops the stars
+  // rather than letting them linger unseen.
   const ratingRaw = formString(form, "rating");
-  const rating = /^[1-5]$/.test(ratingRaw) ? Number(ratingRaw) : null;
+  const rating = !wishlist && /^[1-5]$/.test(ratingRaw) ? Number(ratingRaw) : null;
 
   return {
     data: {
       countryId,
       extraCountryIds,
       category,
-      wishlist: form.get("wishlist") === "1",
+      wishlist,
       title: cap(title, FIELD_LIMITS.title),
       by: cap(formString(form, "by"), FIELD_LIMITS.by),
       note: cap(formString(form, "note"), FIELD_LIMITS.note),

@@ -73,7 +73,9 @@ export default function LogModal({ initialCountryId, entry, onClose, onSave }: L
           note: note.trim(),
           link: link.trim(),
           date,
-          rating,
+          // Stars survive status round-trips locally but wishes never submit
+          // one (the API forces it null for wishes anyway).
+          rating: wish ? null : rating,
           // The tick survives category round-trips locally but only recipes
           // submit it (the API forces it false for everything else anyway).
           nationalDish: category === "recipe" && nationalDish,
@@ -203,6 +205,9 @@ export default function LogModal({ initialCountryId, entry, onClose, onSave }: L
         <input value={by} onChange={(e) => setBy(e.target.value)} onKeyDown={submitOnEnter} placeholder={BY_PLACEHOLDER[category]} maxLength={FIELD_LIMITS.by} style={inputStyle} />
         <input value={note} onChange={(e) => setNote(e.target.value)} onKeyDown={submitOnEnter} placeholder="Note (optional)" maxLength={FIELD_LIMITS.note} style={inputStyle} />
         <input value={link} onChange={(e) => setLink(e.target.value)} onKeyDown={submitOnEnter} placeholder="Link (optional)" style={inputStyle} />
+        {/* Wishes can't be rated — hidden while the Wish toggle is on (create
+            mode always shows it; the wish-list button just doesn't send it). */}
+        {!(editing && wishlist) && (
         <div style={labelStyle}>
           Rating
           <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -227,6 +232,7 @@ export default function LogModal({ initialCountryId, entry, onClose, onSave }: L
             )}
           </div>
         </div>
+        )}
         <label style={labelStyle}>
           Date
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle} />
