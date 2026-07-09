@@ -75,7 +75,10 @@ export default function PassportBook({ user, countries, dark, initialCountryId, 
     const logIds = new Set<string>();
     for (const c of countries) for (const e of c.entries) if (!e.wishlist) logIds.add(e.id);
     const totalEntries = logIds.size;
-    const since = countries.length ? String(Math.min(...countries.map((c) => c.year))) : "—";
+    // Wish-only countries get a page in the book but aren't visited yet, so
+    // they stay out of the identity-page tallies.
+    const stamped = countries.filter((c) => c.logCount > 0);
+    const since = stamped.length ? String(Math.min(...stamped.map((c) => c.year))) : "—";
     const { no, noRaw } = holderNo(user.id);
     return {
       name,
@@ -83,7 +86,7 @@ export default function PassportBook({ user, countries, dark, initialCountryId, 
       given: given.toUpperCase(),
       mono: mono || "✦",
       since,
-      countries: countries.length,
+      countries: stamped.length,
       entries: totalEntries,
       no,
       noRaw,

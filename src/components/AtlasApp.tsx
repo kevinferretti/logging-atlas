@@ -315,16 +315,18 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
               <div style={{ display: "flex", flexDirection: "column", gap: 34 }}>
                 {byContinent.map(([continent, regions]) => (
                   <div key={continent}>
+                    {/* Tallies count really-logged countries — a wish-only
+                        country is listed (it holds wishes) but isn't visited. */}
                     <ContinentHead
                       name={continent}
-                      count={regions.reduce((n, [, l]) => n + l.length, 0)}
+                      count={regions.reduce((n, [, l]) => n + stamped(l), 0)}
                       of={CONTINENT_TOTALS.get(continent) ?? null}
                     />
                     <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
                       {regions.map(([region, list]) => (
                         <div key={region}>
                           {!(regions.length === 1 && region === continent) && (
-                            <RegionHead name={region} tally={`${list.length} OF ${REGION_TOTALS.get(region) ?? list.length}`} />
+                            <RegionHead name={region} tally={`${stamped(list)} OF ${REGION_TOTALS.get(region) ?? list.length}`} />
                           )}
                           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                             {list.map((c) => (
@@ -445,6 +447,11 @@ function IndexRow({
       </div>
     </button>
   );
+}
+
+/** Countries in the list with at least one real log — wishes don't count. */
+function stamped(list: LoggedCountry[]): number {
+  return list.reduce((n, c) => n + (c.logCount > 0 ? 1 : 0), 0);
 }
 
 function ContinentHead({ name, count, of }: { name: string; count: number; of: number | null }) {

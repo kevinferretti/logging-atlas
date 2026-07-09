@@ -20,6 +20,11 @@ model User {
   name         String?
   passwordHash String
   theme        String   @default("Sepia Atlas") // remembered light/dark choice
+  // Pending password reset: sha256 of the one-time token (the raw token only
+  // ever appears in the reset link) and when it stops working. Null when no
+  // reset is pending; cleared on use.
+  resetTokenHash    String?
+  resetTokenExpires DateTime?
   createdAt    DateTime @default(now())
 
   entries Entry[]
