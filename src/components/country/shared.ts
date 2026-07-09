@@ -2,7 +2,9 @@
 // Every variant renders the full page body (header, entries, actions) from
 // these props; once a winner is picked the losers can be deleted wholesale.
 
+import { catalogCountry } from "@/lib/countries";
 import { isInlineImageType } from "@/lib/filetypes";
+import { coveredCountryIds } from "@/lib/logbook";
 import type { Palette } from "@/lib/palettes";
 import type { Entry, LoggedCountry } from "@/lib/types";
 
@@ -59,6 +61,19 @@ export function entryDateParts(e: Entry): { day: string; month: string; monthNo:
 /** "★★★☆☆" for a rated entry, or null when unrated. */
 export function ratingStars(e: Entry): string | null {
   return e.rating ? "★".repeat(e.rating) + "☆".repeat(5 - e.rating) : null;
+}
+
+/**
+ * The OTHER countries a multi-country entry covers, as "Kazakhstan · Tajikistan",
+ * or null for a normal single-country entry — shown so the same entry appearing
+ * on several country pages explains itself.
+ */
+export function alsoCovers(e: Entry, currentCountryId: string): string | null {
+  const names = coveredCountryIds(e)
+    .filter((id) => id !== currentCountryId)
+    .map((id) => catalogCountry(id)?.name ?? "")
+    .filter(Boolean);
+  return names.length ? names.join(" · ") : null;
 }
 
 /** URL of an entry's uploaded file, or null when it has none. */

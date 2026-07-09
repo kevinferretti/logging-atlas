@@ -1,15 +1,30 @@
 import { catalogCountry, resolveCountryId } from "./countries";
 import type { Entry, LoggedCountry } from "./types";
 
+/**
+ * Every country an entry covers — primary first, then extras — resolved to
+ * current catalog ids and deduped (legacy ids can collapse onto each other).
+ */
+export function coveredCountryIds(e: Entry): string[] {
+  const ids: string[] = [];
+  for (const raw of [e.countryId, ...e.extraCountryIds]) {
+    // Entries logged under a since-retired id group with the successor country.
+    const id = resolveCountryId(raw);
+    if (!ids.includes(id)) ids.push(id);
+  }
+  return ids;
+}
+
 /** Group flat entries into per-country logbook records, resolving catalog data. */
 export function assembleCountries(entries: Entry[]): LoggedCountry[] {
   const byCountry = new Map<string, Entry[]>();
   for (const e of entries) {
-    // Entries logged under a since-retired id group with the successor country.
-    const id = resolveCountryId(e.countryId);
-    const list = byCountry.get(id);
-    if (list) list.push(e);
-    else byCountry.set(id, [e]);
+    // A multi-country entry files under each country it covers.
+    for (const id of coveredCountryIds(e)) {
+      const list = byCountry.get(id);
+      if (list) list.push(e);
+      else byCountry.set(id, [e]);
+    }
   }
 
   const result: LoggedCountry[] = [];

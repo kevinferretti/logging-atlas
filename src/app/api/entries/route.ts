@@ -55,6 +55,7 @@ export async function POST(req: Request) {
     data: {
       userId: user.id,
       countryId: data.countryId,
+      extraCountries: data.extraCountryIds.join(","),
       category: data.category,
       wishlist: data.wishlist,
       title: data.title,

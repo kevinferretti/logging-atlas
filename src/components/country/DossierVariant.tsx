@@ -8,7 +8,7 @@ import { CATEGORIES, category } from "@/lib/categories";
 import { fmtCoord, subLine } from "@/lib/logbook";
 import { buildEntryStamp } from "@/lib/inkstamps";
 import type { CategoryKey, Entry } from "@/lib/types";
-import { DISPLAY, MONO, SERIF, entryDateParts, fileHref, linkHost, ratingStars, splitEntries, type VariantProps } from "./shared";
+import { DISPLAY, MONO, SERIF, alsoCovers, entryDateParts, fileHref, linkHost, ratingStars, splitEntries, type VariantProps } from "./shared";
 
 export default function DossierVariant({ country: c, dark, onBack, onPassport, onAdd, onEdit, onDelete }: VariantProps) {
   const { logs, wishes } = splitEntries(c);
@@ -81,7 +81,7 @@ export default function DossierVariant({ country: c, dark, onBack, onPassport, o
 
           {/* Exhibits */}
           {shown.map((e, i) => (
-            <Exhibit key={e.id} e={e} no={String(i + 1).padStart(2, "0")} onEdit={onEdit} onDelete={onDelete} />
+            <Exhibit key={e.id} e={e} no={String(i + 1).padStart(2, "0")} also={alsoCovers(e, c.id)} onEdit={onEdit} onDelete={onDelete} />
           ))}
           {shown.length === 0 && (
             <div style={{ padding: "26px 0", fontFamily: SERIF, fontStyle: "italic", fontSize: 15, color: "var(--ink-soft)" }}>Nothing under this heading.</div>
@@ -127,7 +127,7 @@ function TabBtn({ on, label, onClick }: { on: boolean; label: string; onClick: (
   );
 }
 
-function Exhibit({ e, no, onEdit, onDelete }: { e: Entry; no: string; onEdit: (id: string) => void; onDelete: (id: string) => void }) {
+function Exhibit({ e, no, also, onEdit, onDelete }: { e: Entry; no: string; also: string | null; onEdit: (id: string) => void; onDelete: (id: string) => void }) {
   const cat = category(e.category);
   const sub = subLine(e);
   const file = fileHref(e);
@@ -145,6 +145,7 @@ function Exhibit({ e, no, onEdit, onDelete }: { e: Entry; no: string; onEdit: (i
           {e.title}
         </div>
         {sub && <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 14, color: "var(--ink-soft)", marginTop: 1 }}>{sub}</div>}
+        {also && <div style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: 1.4, textTransform: "uppercase", color: "var(--ink-soft)", marginTop: 3 }}>CROSS-FILED · {also}</div>}
         {e.note && <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 13.5, color: "var(--ink-soft)", opacity: 0.9, marginTop: 4 }}>“{e.note}”</div>}
         <div style={{ display: "flex", gap: 12, marginTop: 5 }}>
           {e.link && (

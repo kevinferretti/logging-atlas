@@ -6,8 +6,8 @@ import { geoNaturalEarth1, geoGraticule10, geoPath, geoBounds, geoContains } fro
 import { feature } from "topojson-client";
 import topoData from "world-atlas/countries-110m.json";
 import { category } from "@/lib/categories";
-import { COUNTRY_CATALOG, catalogCountry, resolveCountryId } from "@/lib/countries";
-import { subLine } from "@/lib/logbook";
+import { COUNTRY_CATALOG, catalogCountry } from "@/lib/countries";
+import { coveredCountryIds, subLine } from "@/lib/logbook";
 import type { Palette } from "@/lib/palettes";
 import type { Entry } from "@/lib/types";
 
@@ -372,11 +372,13 @@ function buildPool(entries: Entry[]): [string, Entry[]][] {
   const byCountry = new Map<string, Entry[]>();
   for (const e of entries) {
     if (e.wishlist) continue;
-    const id = resolveCountryId(e.countryId);
-    if (!catalogCountry(id)) continue;
-    const list = byCountry.get(id);
-    if (list) list.push(e);
-    else byCountry.set(id, [e]);
+    // A multi-country entry can come up for any country it covers.
+    for (const id of coveredCountryIds(e)) {
+      if (!catalogCountry(id)) continue;
+      const list = byCountry.get(id);
+      if (list) list.push(e);
+      else byCountry.set(id, [e]);
+    }
   }
   return [...byCountry.entries()];
 }
@@ -438,8 +440,11 @@ export default function QuizGame({ entries, palette, onClose }: QuizGameProps) {
 
   function pick(id: string) {
     if (!round || guessId) return;
-    setGuessId(id);
-    if (id === round.answerId) setScore((s) => s + 1);
+    // Any country the entry covers is a right answer — credit it as the
+    // round's answer so the reveal and score agree.
+    const hit = coveredCountryIds(round.entry).includes(id) ? round.answerId : id;
+    setGuessId(hit);
+    if (hit === round.answerId) setScore((s) => s + 1);
   }
 
   function next() {

@@ -17,7 +17,7 @@ import GazetteVariant from "./country/GazetteVariant";
 import type { VariantProps } from "./country/shared";
 import { catalogCountry, resolveCountryId } from "@/lib/countries";
 import { submitEntry, updateEntry } from "@/lib/entriesClient";
-import { assembleCountries } from "@/lib/logbook";
+import { assembleCountries, coveredCountryIds } from "@/lib/logbook";
 import { coercePaletteName, getPalette, isDarkPalette, paletteCssVars } from "@/lib/palettes";
 import type { Entry, NewEntryInput, SessionUser } from "@/lib/types";
 
@@ -186,10 +186,11 @@ export default function CountryPage({ user, initialEntries, countryId, initialVa
             const updated = await updateEntry(editTarget.id, input, file, removeFile);
             setEntries((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
             setEditTarget(null);
-            // Moved to a different country? Follow it — unless the book is
-            // up, which shows every country and refreshes in place.
-            const target = resolveCountryId(input.countryId);
-            if (!passportOpen && target !== id) router.push(`/country/${target}`);
+            // No longer covers this country? Follow it to its primary one —
+            // unless the book is up, which shows every country and refreshes
+            // in place.
+            const covered = coveredCountryIds(updated);
+            if (!passportOpen && !covered.includes(id)) router.push(`/country/${covered[0]}`);
           }}
         />
       )}

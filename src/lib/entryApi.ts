@@ -8,6 +8,7 @@ import { FIELD_LIMITS, type CategoryKey, type Entry } from "./types";
 export const ENTRY_SELECT = {
   id: true,
   countryId: true,
+  extraCountries: true,
   category: true,
   wishlist: true,
   title: true,
@@ -25,6 +26,7 @@ export const ENTRY_SELECT = {
 export type EntryRow = {
   id: string;
   countryId: string;
+  extraCountries: string;
   category: string;
   wishlist: boolean;
   title: string;
@@ -40,7 +42,12 @@ export type EntryRow = {
 };
 
 export function toEntry(row: EntryRow): Entry {
-  return { ...row, category: row.category as CategoryKey };
+  const { extraCountries, ...rest } = row;
+  return {
+    ...rest,
+    extraCountryIds: extraCountries ? extraCountries.split(",") : [],
+    category: row.category as CategoryKey,
+  };
 }
 
 /** True for a well-formed "yyyy-mm-dd" that is a real calendar date. */
@@ -68,6 +75,8 @@ function cap(s: string, n: number): string {
 
 export interface ParsedEntryForm {
   countryId: string;
+  /** Additional covered countries, deduped and never containing countryId. */
+  extraCountryIds: string[];
   category: CategoryKey;
   wishlist: boolean;
   title: string;
@@ -95,6 +104,16 @@ export function parseEntryForm(form: FormData): { data: ParsedEntryForm } | { er
   if (!isCategoryKey(category)) return { error: "Unknown category." };
   if (!title) return { error: "Text is required." };
 
+  // Extra covered countries: CSV of ids. Unknown ids drop silently (a stale
+  // client is no reason to lose the entry), dupes and the primary collapse.
+  const extraCountryIds: string[] = [];
+  for (const raw of formString(form, "extraCountries").split(",")) {
+    const id = resolveCountryId(raw.trim());
+    if (id && id !== countryId && catalogCountry(id) && !extraCountryIds.includes(id)) {
+      extraCountryIds.push(id);
+    }
+  }
+
   // The picker sends the user's local calendar date; treat out-of-range or
   // malformed values as absent.
   const currentYear = new Date().getFullYear();
@@ -110,6 +129,7 @@ export function parseEntryForm(form: FormData): { data: ParsedEntryForm } | { er
   return {
     data: {
       countryId,
+      extraCountryIds,
       category,
       wishlist: form.get("wishlist") === "1",
       title: cap(title, FIELD_LIMITS.title),

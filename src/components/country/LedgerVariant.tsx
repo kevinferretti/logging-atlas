@@ -9,7 +9,7 @@ import { countryPrefix } from "@/lib/countries";
 import { fmtCoord, subLine } from "@/lib/logbook";
 import { buildCountDisc } from "@/lib/stamps";
 import type { Entry } from "@/lib/types";
-import { DISPLAY, MONO, SERIF, entryDateParts, fileHref, linkHost, ratingStars, splitEntries, type VariantProps } from "./shared";
+import { DISPLAY, MONO, SERIF, alsoCovers, entryDateParts, fileHref, linkHost, ratingStars, splitEntries, type VariantProps } from "./shared";
 
 const COLS = "44px 84px 1fr 92px 150px 52px";
 
@@ -52,7 +52,7 @@ export default function LedgerVariant({ country: c, palette, onBack, onPassport,
           Nothing logged yet — only wishes below.
         </div>
       ) : (
-        logs.map((e, i) => <Row key={e.id} e={e} no={String(i + 1).padStart(2, "0")} onEdit={onEdit} onDelete={onDelete} />)
+        logs.map((e, i) => <Row key={e.id} e={e} no={String(i + 1).padStart(2, "0")} also={alsoCovers(e, c.id)} onEdit={onEdit} onDelete={onDelete} />)
       )}
 
       {wishes.length > 0 && (
@@ -60,7 +60,7 @@ export default function LedgerVariant({ country: c, palette, onBack, onPassport,
           <div style={{ margin: "44px 0 0", padding: "0 6px 8px", borderBottom: "1.5px solid var(--sepia)", fontFamily: MONO, fontSize: 10, letterSpacing: 2.5, color: "var(--sepia)" }}>
             WISH LIST — DECLARED, NOT YET LOGGED
           </div>
-          {wishes.map((e) => <Row key={e.id} e={e} no="☆" onEdit={onEdit} onDelete={onDelete} />)}
+          {wishes.map((e) => <Row key={e.id} e={e} no="☆" also={alsoCovers(e, c.id)} onEdit={onEdit} onDelete={onDelete} />)}
         </>
       )}
 
@@ -71,7 +71,7 @@ export default function LedgerVariant({ country: c, palette, onBack, onPassport,
   );
 }
 
-function Row({ e, no, onEdit, onDelete }: { e: Entry; no: string; onEdit: (id: string) => void; onDelete: (id: string) => void }) {
+function Row({ e, no, also, onEdit, onDelete }: { e: Entry; no: string; also: string | null; onEdit: (id: string) => void; onDelete: (id: string) => void }) {
   const cat = category(e.category);
   const sub = subLine(e);
   const file = fileHref(e);
@@ -89,6 +89,7 @@ function Row({ e, no, onEdit, onDelete }: { e: Entry; no: string; onEdit: (id: s
         <div style={{ fontFamily: DISPLAY, fontSize: 18, color: "var(--ink)", fontStyle: e.wishlist ? "italic" : "normal" }}>{e.title}</div>
         {sub && <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 14, color: "var(--ink-soft)", marginTop: 1 }}>{sub}</div>}
         {stars && <div style={{ fontSize: 11, letterSpacing: 2, color: "var(--sepia)", marginTop: 2 }}>{stars}</div>}
+        {also && <div style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: 1.4, textTransform: "uppercase", color: "var(--ink-soft)", marginTop: 3 }}>ALSO {also}</div>}
         {e.note && <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 13.5, color: "var(--ink-soft)", opacity: 0.85, marginTop: 2 }}>“{e.note}”</div>}
       </div>
       <div style={{ fontFamily: MONO, fontSize: 11.5, color: "var(--ink)" }}>{e.wishlist ? "—" : d ? `${d.day}.${d.monthNo}.${d.year}` : e.year}</div>

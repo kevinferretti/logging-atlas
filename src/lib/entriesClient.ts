@@ -5,6 +5,7 @@ import type { Entry, NewEntryInput } from "./types";
 function entryForm(input: NewEntryInput, file?: File | null): FormData {
   const fd = new FormData();
   fd.append("countryId", input.countryId);
+  fd.append("extraCountries", input.extraCountryIds.join(","));
   fd.append("category", input.category);
   fd.append("wishlist", input.wishlist ? "1" : "0");
   fd.append("title", input.title);

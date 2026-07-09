@@ -7,9 +7,10 @@
 // wrapped by PassportBook.tsx. Stamp SVGs reuse buildEntryStamp from inkstamps
 // and the shared ink turbulence filters (rendered by <InkFilters/>).
 
+import { catalogCountry } from "./countries";
 import { escapeHtml as esc } from "./html";
 import { buildEntryStamp } from "./inkstamps";
-import { subLine } from "./logbook";
+import { coveredCountryIds, subLine } from "./logbook";
 import type { CategoryKey, Entry } from "./types";
 
 export interface BookHolder {
@@ -865,6 +866,13 @@ export class PassportBook {
     const starsRow = e.rating
       ? '<div style="font-size:11.5px;letter-spacing:2px;color:#8A5A3B;margin-top:4px;">' + "★".repeat(e.rating) + "☆".repeat(5 - e.rating) + "</div>"
       : "";
+    const alsoNames = coveredCountryIds(e)
+      .filter((id) => id !== found.country.id)
+      .map((id) => catalogCountry(id)?.name ?? "")
+      .filter(Boolean);
+    const alsoRow = alsoNames.length
+      ? '<div style="font-family:\'Special Elite\',monospace;font-size:8.5px;letter-spacing:1.4px;text-transform:uppercase;color:#6B6154;margin-top:6px;">Also ' + esc(alsoNames.join(" · ")) + "</div>"
+      : "";
     const noteRow = e.note
       ? '<div style="font-family:\'EB Garamond\',serif;font-size:13.5px;color:#4A4336;margin-top:7px;line-height:1.35;">' + esc(e.note) + "</div>"
       : "";
@@ -873,6 +881,7 @@ export class PassportBook {
       '<div style="font-family:\'Marcellus\',serif;font-size:19px;color:#2E2A22;margin-top:3px;line-height:1.12;">' + esc(e.title) + "</div>" +
       byRow +
       starsRow +
+      alsoRow +
       noteRow +
       linkRow +
       '<div style="display:flex;gap:8px;margin-top:12px;">' +

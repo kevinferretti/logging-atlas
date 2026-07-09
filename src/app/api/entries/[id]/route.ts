@@ -64,6 +64,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     where: { id: existing.id },
     data: {
       countryId: data.countryId,
+      extraCountries: data.extraCountryIds.join(","),
       category: data.category,
       wishlist: data.wishlist,
       title: data.title,

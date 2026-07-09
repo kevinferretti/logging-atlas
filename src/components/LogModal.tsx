@@ -25,6 +25,8 @@ function todayISO(): string {
 export default function LogModal({ initialCountryId, entry, onClose, onSave }: LogModalProps) {
   const editing = entry ?? null;
   const [countryId, setCountryId] = useState(editing?.countryId ?? initialCountryId ?? COUNTRY_CATALOG_SORTED[0]?.id ?? "");
+  // Additional countries the entry covers (a book spanning several countries).
+  const [extraCountryIds, setExtraCountryIds] = useState<string[]>(editing?.extraCountryIds ?? []);
   const [category, setCategory] = useState<CategoryKey>(editing?.category ?? "recipe");
   // Log-vs-wish status; only shown while editing — on create the two Add
   // buttons decide it.
@@ -52,7 +54,18 @@ export default function LogModal({ initialCountryId, entry, onClose, onSave }: L
     setError(null);
     try {
       await onSave(
-        { countryId, category, wishlist: wish, title: t, by: by.trim(), note: note.trim(), link: link.trim(), date, rating },
+        {
+          countryId,
+          extraCountryIds: extraCountryIds.filter((c) => c !== countryId),
+          category,
+          wishlist: wish,
+          title: t,
+          by: by.trim(),
+          note: note.trim(),
+          link: link.trim(),
+          date,
+          rating,
+        },
         category === "recipe" ? file : null,
         removeFile,
       );
@@ -80,16 +93,54 @@ export default function LogModal({ initialCountryId, entry, onClose, onSave }: L
           <div style={{ fontFamily: "Marcellus,serif", fontSize: 24, color: "var(--ink)" }}>{editing ? "Edit entry" : "Log an entry"}</div>
         </div>
 
-        <label style={labelStyle}>
+        <div style={labelStyle}>
           Country
-          <select value={countryId} onChange={(e) => setCountryId(e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
+          <select
+            value={countryId}
+            onChange={(e) => {
+              setCountryId(e.target.value);
+              setExtraCountryIds((prev) => prev.filter((c) => c !== e.target.value));
+            }}
+            style={{ ...inputStyle, cursor: "pointer" }}
+          >
             {COUNTRY_CATALOG_SORTED.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
               </option>
             ))}
           </select>
-        </label>
+          {extraCountryIds.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {extraCountryIds.map((cid) => (
+                <span key={cid} style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid var(--line)", borderRadius: 2, padding: "4px 8px", fontFamily: "'EB Garamond',serif", fontSize: 13.5, letterSpacing: 0, textTransform: "none", color: "var(--ink)" }}>
+                  {COUNTRY_CATALOG_SORTED.find((c) => c.id === cid)?.name ?? cid}
+                  <button
+                    onClick={() => setExtraCountryIds((prev) => prev.filter((c) => c !== cid))}
+                    title="Remove country"
+                    style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-soft)", fontSize: 10, padding: 0, lineHeight: 1 }}
+                  >
+                    ✕
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <select
+            value=""
+            onChange={(e) => {
+              const cid = e.target.value;
+              if (cid) setExtraCountryIds((prev) => (prev.includes(cid) ? prev : [...prev, cid]));
+            }}
+            style={{ ...inputStyle, cursor: "pointer", color: "var(--ink-soft)" }}
+          >
+            <option value="">＋ Also covers… (optional)</option>
+            {COUNTRY_CATALOG_SORTED.filter((c) => c.id !== countryId && !extraCountryIds.includes(c.id)).map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {CATEGORIES.map((c) => {

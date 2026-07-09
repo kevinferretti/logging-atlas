@@ -55,7 +55,9 @@ export default function AtlasApp({ user, initialEntries }: AtlasAppProps) {
     return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }, [ranked]);
   const maxLogs = Math.max(1, ranked.length ? ranked[0].logCount : 1);
-  const totalLogs = countries.reduce((n, c) => n + c.logCount, 0);
+  // Count entries, not per-country appearances — a multi-country entry files
+  // under each country it covers but is still one log.
+  const totalLogs = entries.reduce((n, e) => n + (e.wishlist ? 0 : 1), 0);
   const loggedCountries = countries.reduce((n, c) => n + (c.logCount > 0 ? 1 : 0), 0);
 
   function openCountry(id: string) {

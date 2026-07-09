@@ -7,7 +7,7 @@
 import { category } from "@/lib/categories";
 import { fmtCoord, subLine } from "@/lib/logbook";
 import type { Entry } from "@/lib/types";
-import { DISPLAY, MONO, SERIF, entryDateParts, fileHref, linkHost, ratingStars, splitEntries, type VariantProps } from "./shared";
+import { DISPLAY, MONO, SERIF, alsoCovers, entryDateParts, fileHref, linkHost, ratingStars, splitEntries, type VariantProps } from "./shared";
 
 export default function JournalVariant({ country: c, onBack, onPassport, onAdd, onEdit, onDelete }: VariantProps) {
   const { logs, wishes } = splitEntries(c);
@@ -50,7 +50,7 @@ export default function JournalVariant({ country: c, onBack, onPassport, onAdd, 
             <div style={{ position: "absolute", left: -7, top: 0, width: 12, height: 12, borderRadius: "50%", background: "var(--sepia)", border: "2px solid var(--paper)" }} />
             <div style={{ fontFamily: DISPLAY, fontSize: 25, color: "var(--ink)", transform: "translateY(-8px)" }}>{year}</div>
             {list.map((e) => (
-              <JEntry key={e.id} e={e} hollow={false} onEdit={onEdit} onDelete={onDelete} />
+              <JEntry key={e.id} e={e} hollow={false} also={alsoCovers(e, c.id)} onEdit={onEdit} onDelete={onDelete} />
             ))}
           </div>
         ))}
@@ -60,7 +60,7 @@ export default function JournalVariant({ country: c, onBack, onPassport, onAdd, 
             <div style={{ position: "absolute", left: -7, top: 0, width: 12, height: 12, borderRadius: "50%", background: "var(--paper)", border: "2px solid var(--sepia)" }} />
             <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 3, color: "var(--sepia)", transform: "translateY(-5px)" }}>SOMEDAY</div>
             {wishes.map((e) => (
-              <JEntry key={e.id} e={e} hollow onEdit={onEdit} onDelete={onDelete} />
+              <JEntry key={e.id} e={e} hollow also={alsoCovers(e, c.id)} onEdit={onEdit} onDelete={onDelete} />
             ))}
           </div>
         )}
@@ -69,7 +69,7 @@ export default function JournalVariant({ country: c, onBack, onPassport, onAdd, 
   );
 }
 
-function JEntry({ e, hollow, onEdit, onDelete }: { e: Entry; hollow: boolean; onEdit: (id: string) => void; onDelete: (id: string) => void }) {
+function JEntry({ e, hollow, also, onEdit, onDelete }: { e: Entry; hollow: boolean; also: string | null; onEdit: (id: string) => void; onDelete: (id: string) => void }) {
   const cat = category(e.category);
   const sub = subLine(e);
   const file = fileHref(e);
@@ -98,6 +98,7 @@ function JEntry({ e, hollow, onEdit, onDelete }: { e: Entry; hollow: boolean; on
           <div style={{ fontFamily: DISPLAY, fontSize: 20, lineHeight: 1.2, color: "var(--ink)", marginTop: 2, fontStyle: hollow ? "italic" : "normal" }}>{e.title}</div>
           {sub && <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 14.5, color: "var(--ink-soft)", marginTop: 2 }}>{sub}</div>}
           {stars && <div style={{ fontSize: 11.5, letterSpacing: 2, color: "var(--sepia)", marginTop: 3 }}>{stars}</div>}
+          {also && <div style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: 1.4, textTransform: "uppercase", color: "var(--ink-soft)", marginTop: 4 }}>ALSO {also}</div>}
           {e.note && <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 14.5, color: "var(--ink-soft)", opacity: 0.9, marginTop: 5 }}>“{e.note}”</div>}
           <div style={{ display: "flex", gap: 12, marginTop: 5 }}>
             {e.link && (

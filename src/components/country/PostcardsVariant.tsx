@@ -6,7 +6,7 @@
 import { category } from "@/lib/categories";
 import { fmtCoord, subLine } from "@/lib/logbook";
 import type { Entry } from "@/lib/types";
-import { DISPLAY, MONO, SERIF, entryDateParts, fileHref, isImage, linkHost, ratingStars, splitEntries, type VariantProps } from "./shared";
+import { DISPLAY, MONO, SERIF, alsoCovers, entryDateParts, fileHref, isImage, linkHost, ratingStars, splitEntries, type VariantProps } from "./shared";
 
 // Deterministic little tilts so the board looks hand-pinned but stable.
 const TILTS = [-1.1, 0.8, -0.5, 1.3, -0.9, 0.4];
@@ -58,14 +58,14 @@ export default function PostcardsVariant({ country: c, onBack, onPassport, onAdd
       {/* The board */}
       <div style={{ columns: "260px 3", columnGap: 22, marginTop: 40 }}>
         {cards.map((e, i) => (
-          <Card key={e.id} e={e} tilt={TILTS[i % TILTS.length]} onEdit={onEdit} onDelete={onDelete} />
+          <Card key={e.id} e={e} tilt={TILTS[i % TILTS.length]} also={alsoCovers(e, c.id)} onEdit={onEdit} onDelete={onDelete} />
         ))}
       </div>
     </div>
   );
 }
 
-function Card({ e, tilt, onEdit, onDelete }: { e: Entry; tilt: number; onEdit: (id: string) => void; onDelete: (id: string) => void }) {
+function Card({ e, tilt, also, onEdit, onDelete }: { e: Entry; tilt: number; also: string | null; onEdit: (id: string) => void; onDelete: (id: string) => void }) {
   const cat = category(e.category);
   const sub = subLine(e);
   const file = fileHref(e);
@@ -119,6 +119,7 @@ function Card({ e, tilt, onEdit, onDelete }: { e: Entry; tilt: number; onEdit: (
       <div style={{ fontFamily: DISPLAY, fontSize: 21, lineHeight: 1.15, color: "var(--ink)", marginTop: 8, paddingRight: 26 }}>{e.title}</div>
       {sub && <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 14.5, color: "var(--ink-soft)", marginTop: 3 }}>{sub}</div>}
       {stars && <div style={{ fontSize: 11.5, letterSpacing: 2, color: "var(--sepia)", marginTop: 4 }}>{stars}</div>}
+      {also && <div style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: 1.4, textTransform: "uppercase", color: "var(--ink-soft)", marginTop: 5 }}>ALSO {also}</div>}
       {e.note && <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 14, color: "var(--ink-soft)", opacity: 0.9, marginTop: 7 }}>“{e.note}”</div>}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, borderTop: "1px solid var(--line)", paddingTop: 7 }}>
         <div style={{ minWidth: 0, display: "flex", gap: 10 }}>

@@ -3,6 +3,12 @@ export type CategoryKey = "recipe" | "book" | "movie" | "music" | "place";
 export interface Entry {
   id: string;
   countryId: string;
+  /**
+   * Additional countries the entry covers beyond countryId (one book spanning
+   * several countries is logged once and shown under each). Never includes
+   * countryId; [] for a normal single-country entry.
+   */
+  extraCountryIds: string[];
   category: CategoryKey;
   /** True for wish-list entries — things to do/make someday, not yet logged. */
   wishlist: boolean;
@@ -46,6 +52,8 @@ export const FIELD_LIMITS = { title: 200, by: 120, note: 500 } as const;
 /** Payload for logging a new entry (shared by the log modal and book). */
 export interface NewEntryInput {
   countryId: string;
+  /** Additional covered countries; see Entry.extraCountryIds. */
+  extraCountryIds: string[];
   category: CategoryKey;
   wishlist: boolean;
   title: string;
