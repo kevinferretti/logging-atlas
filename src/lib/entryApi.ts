@@ -18,6 +18,7 @@ export const ENTRY_SELECT = {
   date: true,
   year: true,
   rating: true,
+  nationalDish: true,
   fileName: true,
   fileKey: true,
   fileType: true,
@@ -36,6 +37,7 @@ export type EntryRow = {
   date: string;
   year: number;
   rating: number | null;
+  nationalDish: boolean;
   fileName: string | null;
   fileKey: string | null;
   fileType: string | null;
@@ -90,6 +92,8 @@ export interface ParsedEntryForm {
   date: string | null;
   /** Review rating 1–5, or null when unrated (or out of range). */
   rating: number | null;
+  /** Recipe-only national-dish flag — forced false for other categories. */
+  nationalDish: boolean;
 }
 
 /** Validate the log-modal FormData; returns the shaped fields or an error message. */
@@ -138,6 +142,9 @@ export function parseEntryForm(form: FormData): { data: ParsedEntryForm } | { er
       link: normalizeLink(formString(form, "link")),
       date,
       rating,
+      // Only recipes can be national dishes; editing an entry into another
+      // category drops the flag rather than letting it linger unseen.
+      nationalDish: category === "recipe" && form.get("nationalDish") === "1",
     },
   };
 }

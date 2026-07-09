@@ -14,6 +14,7 @@ function entryForm(input: NewEntryInput, file?: File | null): FormData {
   fd.append("link", input.link);
   fd.append("date", input.date);
   fd.append("rating", input.rating == null ? "" : String(input.rating));
+  fd.append("nationalDish", input.nationalDish ? "1" : "0");
   if (file) fd.append("file", file);
   return fd;
 }

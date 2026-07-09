@@ -52,6 +52,9 @@ model Entry {
   year      Int
   // Review rating, 1–5 stars; null = unrated.
   rating    Int?
+  // Recipe-only: the dish is a national dish of the countries it's logged
+  // under. Always false for other categories.
+  nationalDish Boolean @default(false)
   // Optional attachment (currently used for recipe uploads). The file is stored
   // on the persistent volume under UPLOAD_DIR; fileKey is its on-disk name.
   fileName  String?

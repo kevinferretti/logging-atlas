@@ -65,6 +65,7 @@ export async function POST(req: Request) {
       date,
       year,
       rating: data.rating,
+      nationalDish: data.nationalDish,
       ...fileFields,
     },
     select: ENTRY_SELECT,

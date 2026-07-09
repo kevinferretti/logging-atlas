@@ -74,6 +74,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       date,
       year,
       rating: data.rating,
+      nationalDish: data.nationalDish,
       ...filePatch,
     },
     select: ENTRY_SELECT,

@@ -110,7 +110,7 @@ function Kicker({ e }: { e: Entry }) {
   const d = entryDateParts(e);
   return (
     <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: 2.2, textTransform: "uppercase", color: cat?.color }}>
-      {cat?.one} · {d ? `${d.day} ${d.month} ${d.year}` : e.year}
+      {cat?.one}{e.nationalDish ? " · National dish" : ""} · {d ? `${d.day} ${d.month} ${d.year}` : e.year}
     </div>
   );
 }

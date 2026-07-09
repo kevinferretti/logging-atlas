@@ -84,6 +84,9 @@ function Row({ e, no, also, onEdit, onDelete }: { e: Entry; no: string; also: st
         <span style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: 1.2, textTransform: "uppercase", color: cat?.color, border: `1px solid ${cat?.color}`, borderRadius: 2, padding: "2px 6px", opacity: 0.9, whiteSpace: "nowrap" }}>
           {cat?.one}
         </span>
+        {e.nationalDish && (
+          <div style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: 1.2, textTransform: "uppercase", color: "var(--sepia)", marginTop: 5, whiteSpace: "nowrap" }}>Nat. dish</div>
+        )}
       </div>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontFamily: DISPLAY, fontSize: 18, color: "var(--ink)", fontStyle: e.wishlist ? "italic" : "normal" }}>{e.title}</div>

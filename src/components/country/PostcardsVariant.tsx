@@ -110,7 +110,7 @@ function Card({ e, tilt, also, onEdit, onDelete }: { e: Entry; tilt: number; als
       </div>
 
       <div style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: 1.6, textTransform: "uppercase", color: cat?.color, paddingRight: 36 }}>
-        {e.wishlist ? "wish · " : ""}{cat?.one}{e.wishlist ? "" : d ? ` · ${d.day} ${d.month} ’${d.year.slice(2)}` : ` · ’${String(e.year).slice(2)}`}
+        {e.wishlist ? "wish · " : ""}{cat?.one}{e.nationalDish ? " · national dish" : ""}{e.wishlist ? "" : d ? ` · ${d.day} ${d.month} ’${d.year.slice(2)}` : ` · ’${String(e.year).slice(2)}`}
       </div>
       {isImage(e) && file && (
         // eslint-disable-next-line @next/next/no-img-element

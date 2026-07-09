@@ -46,6 +46,7 @@ export default function LogModal({ initialCountryId, entry, onClose, onSave }: L
   // field (the API preserves it); a blank date on create means today.
   const [date, setDate] = useState(editing ? editing.date : todayISO());
   const [rating, setRating] = useState<number | null>(editing?.rating ?? null);
+  const [nationalDish, setNationalDish] = useState(editing?.nationalDish ?? false);
   const [file, setFile] = useState<File | null>(null);
   const [removeFile, setRemoveFile] = useState(false);
   // Which submit button is in flight — the two Add buttons share the form.
@@ -72,6 +73,9 @@ export default function LogModal({ initialCountryId, entry, onClose, onSave }: L
           link: link.trim(),
           date,
           rating,
+          // The tick survives category round-trips locally but only recipes
+          // submit it (the API forces it false for everything else anyway).
+          nationalDish: category === "recipe" && nationalDish,
         },
         category === "recipe" ? file : null,
         removeFile,
@@ -226,6 +230,20 @@ export default function LogModal({ initialCountryId, entry, onClose, onSave }: L
           Date
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle} />
         </label>
+        {category === "recipe" && (
+          <label
+            title="Mark the dish as a national dish of the country it's logged under"
+            style={{ ...labelStyle, flexDirection: "row", alignItems: "center", gap: 9, cursor: "pointer" }}
+          >
+            <input
+              type="checkbox"
+              checked={nationalDish}
+              onChange={(e) => setNationalDish(e.target.checked)}
+              style={{ accentColor: "var(--sepia)", width: 15, height: 15, margin: 0, cursor: "pointer" }}
+            />
+            National dish
+          </label>
+        )}
         {category === "recipe" && (
           <label style={labelStyle}>
             {keptFile ? "Replace recipe file (optional)" : "Recipe file (optional)"}

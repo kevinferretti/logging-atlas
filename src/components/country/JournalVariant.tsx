@@ -93,7 +93,7 @@ function JEntry({ e, hollow, also, onEdit, onDelete }: { e: Entry; hollow: boole
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
         <div style={{ minWidth: 0 }}>
           <span style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: 1.6, textTransform: "uppercase", color: cat?.color }}>
-            {hollow ? "☆ " : ""}{cat?.one}{d ? ` · ${d.day} ${d.month}` : ""}
+            {hollow ? "☆ " : ""}{cat?.one}{e.nationalDish ? " · National dish" : ""}{d ? ` · ${d.day} ${d.month}` : ""}
           </span>
           <div style={{ fontFamily: DISPLAY, fontSize: 20, lineHeight: 1.2, color: "var(--ink)", marginTop: 2, fontStyle: hollow ? "italic" : "normal" }}>{e.title}</div>
           {sub && <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 14.5, color: "var(--ink-soft)", marginTop: 2 }}>{sub}</div>}

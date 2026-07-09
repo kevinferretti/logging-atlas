@@ -21,6 +21,8 @@ export interface Entry {
   year: number;
   /** Review rating, 1–5 stars; null = unrated. */
   rating: number | null;
+  /** Recipe-only: a national dish of the countries it's logged under. */
+  nationalDish: boolean;
   fileName: string | null;
   fileKey: string | null;
   fileType: string | null;
@@ -64,4 +66,6 @@ export interface NewEntryInput {
   date: string;
   /** 1–5 stars; null = unrated. */
   rating: number | null;
+  /** Recipe-only national-dish flag; ignored for other categories. */
+  nationalDish: boolean;
 }

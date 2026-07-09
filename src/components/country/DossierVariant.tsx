@@ -138,6 +138,7 @@ function Exhibit({ e, no, also, onEdit, onDelete }: { e: Entry; no: string; also
       <div style={{ minWidth: 0 }}>
         <div style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: 2, color: "var(--ink-soft)" }}>
           EXHIBIT {no} · <span style={{ color: cat?.color }}>{cat?.one.toUpperCase()}</span>
+          {e.nationalDish && <> · <span style={{ color: "var(--sepia)" }}>NATIONAL DISH</span></>}
           {e.wishlist ? " · ☆ WISH LIST" : d ? ` · ${d.day} ${d.month} ${d.year}` : ` · ${e.year}`}
           {stars && <> · <span style={{ color: "var(--sepia)", letterSpacing: 1 }}>{stars}</span></>}
         </div>
